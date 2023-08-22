@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Cj ChatGPT</string>
+    <string name="clear_text">Clear Text</string>
+    <string name="send">Send</string>
+    <string name="text_is_too_long">Text Is Too Long</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="open_drawer">Open Drawer</string>
+    <string name="new_chat">New Chat</string>
+    <string name="history">History</string>
+    <string name="text_copied_to_clipboard">Text Copied To Clipboard</string>
+    <string name="add_new_chat">Add New Chat</string>
+    <string name="successfully_deleted_topic">Successfully Deleted Topic</string>
+    <string name="successfully_renamed_topic">Successfully Renamed Topic</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="no_chats_present">No Chats Present</string>
+    <string name="new_name">New Name</string>
+    <string name="no_internet_available">No Internet Available</string>
+</resources>
