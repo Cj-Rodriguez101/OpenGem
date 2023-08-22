@@ -11,7 +11,7 @@ ChatGpt App Using OpenAI api
 ## Architecture - MVVM
 ## Tools
 * Jetpack Compose
-* OpenAI Android Library By [AAllam & Contributors](https://github.com/aallam/openai-kotlin)
+* OpenAI Android Library By [aallam & contributors](https://github.com/aallam/openai-kotlin)
 * Room
 * Kotlin DSL
 * Datastore
