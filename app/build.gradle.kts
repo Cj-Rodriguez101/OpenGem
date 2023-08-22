@@ -19,7 +19,6 @@ android {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
 
-        //buildConfigField(type = "String", name = "API_KEY", value = properties.getProperty("API_KEY"))
         buildConfigField(type = "String", name = "API_KEY", value = "\"${properties.getProperty("API_KEY")}\"")
         applicationId = "com.cjrodriguez.cjchatgpt"
         minSdk = 24

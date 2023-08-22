@@ -10,7 +10,7 @@ interface TopicRepository {
 
     fun searchTopics(query: String): Flow<PagingData<Topic>>
 
-    fun deleteTopic(topicId: String): Flow<DataState<Unit>>
+    fun deleteTopic(topicId: String): Flow<DataState<String>>
 
     fun renameTopic(topic: TopicEntity): Flow<DataState<Unit>>
 }

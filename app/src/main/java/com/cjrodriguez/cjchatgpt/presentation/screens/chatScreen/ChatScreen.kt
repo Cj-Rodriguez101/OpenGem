@@ -24,7 +24,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -60,13 +60,13 @@ import com.cjrodriguez.cjchatgpt.data.util.revertCodeOrPlainHtmlBackToHtml
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
-import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.components.AnimateTypewriterText
 import com.cjrodriguez.cjchatgpt.presentation.components.TextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ChatCard
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.QuestionTextField
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
+import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
 
@@ -80,10 +80,11 @@ fun ChatScreen(
     status: ConnectivityObserver.Status,
     message: String,
     topicTitle: String,
+    topicId: String,
     wordCount: Int,
     upperLimit: Int,
     errorMessage: UiText,
-    navigateToHistoryScreen: () -> Unit,
+    navigateToHistoryScreen: (String) -> Unit,
     onTriggerEvent: (ChatListEvents) -> Unit
 ) {
 
@@ -91,12 +92,6 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
-
-//    val firstItemVisible by remember {
-//        derivedStateOf {
-//            index == items.lastIndex && listState.isScrolledToEnd()
-//        }
-//    }
 
     CjChatGPTTheme(
         messageSet = messageSet,
@@ -127,7 +122,8 @@ fun ChatScreen(
                             painter = painterResource(id = R.drawable.ai_icon),
                             contentDescription = "ai", modifier = Modifier
                                 .padding(16.dp)
-                                .size(40.dp)
+                                .size(40.dp),
+                            colorFilter = ColorFilter.tint(color = MaterialTheme.colorScheme.onSurface)
                         )
 
                         OutlinedButton(
@@ -164,7 +160,7 @@ fun ChatScreen(
                         OutlinedButton(
                             onClick = {
                                 scope.launch { drawerState.close() }
-                                navigateToHistoryScreen()
+                                navigateToHistoryScreen(topicId)
                             },
                             modifier = Modifier
                                 .width(200.dp)
@@ -226,17 +222,6 @@ fun ChatScreen(
                             }
                         })
                     },
-//                    floatingActionButton = {
-//                        if(shouldShowScrollButton){
-//                            Column(modifier = Modifier.padding(bottom = 100.dp)){
-//                                Button(onClick = { scope.launch { listState.scrollToItem(0) } }) {
-//                                    Icon(imageVector = Icons.Default.ExpandMore, contentDescription = "Scroll Down")
-//                                }
-//                            }
-//                        }
-//
-//                    },
-                    floatingActionButtonPosition = FabPosition.Center
                 ) { paddingValues ->
                     ConstraintLayout(
                         modifier = Modifier
@@ -325,62 +310,6 @@ fun ChatScreen(
                                 LaunchedEffect(Unit) { listState.animateScrollToItem(0) }
                             }
                         }
-
-
-//                        when (allChats.loadState.refresh) {
-//                            LoadState.Loading -> {
-//                                Log.e("state", "loading")
-//                            }
-//
-//                            is LoadState.Error -> {
-//                                Log.e("state", "error")
-//                            }
-//
-//                            else -> {
-//                                if (allChats.itemCount == 0) {
-//                                    Column(
-//                                        modifier = Modifier
-//                                            .constrainAs(chatSpace) {
-//                                                top.linkTo(title.bottom, 16.dp)
-//                                                start.linkTo(parent.start, 16.dp)
-//                                                end.linkTo(parent.end, 16.dp)
-//                                                bottom.linkTo(textField.top)
-//                                                this.width = Dimension.fillToConstraints
-//                                                this.height = Dimension.fillToConstraints
-//                                            }, verticalArrangement = Arrangement.Center,
-//                                        horizontalAlignment = Alignment.CenterHorizontally
-//                                    ) {
-//                                        Text(
-//                                            text = "No Chats Present",
-//                                            textAlign = TextAlign.Center
-//                                        )
-//                                    }
-//                                } else {
-//                                    LazyColumn(
-//                                        Modifier
-//                                            .constrainAs(chatSpace) {
-//                                                top.linkTo(title.bottom, 16.dp)
-//                                                start.linkTo(parent.start, 16.dp)
-//                                                end.linkTo(parent.end, 16.dp)
-//                                                bottom.linkTo(textField.top)
-//                                                this.width = Dimension.fillToConstraints
-//                                                this.height = Dimension.fillToConstraints
-//                                            }, verticalArrangement = Arrangement.Top,
-//                                        reverseLayout = true,
-//                                        horizontalAlignment = Alignment.CenterHorizontally
-//                                    ) {
-//                                        items(count = allChats.itemCount,
-//                                            key = allChats.itemKey(Chat::messageId)) { index ->
-//
-//                                            //val article: Article = articlesLazyItems[index] ?: return@items
-//                                            allChats[index]?.let {
-//                                                ChatCard(it, onCopyClick = {onTriggerEvent(ChatListEvents.CopyTextToClipBoard(it.content.revertCodeOrPlainHtmlBackToHtml().revertHtmlToPlainText()))})
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
 
                         QuestionTextField(message = message,
                             wordCount = wordCount,

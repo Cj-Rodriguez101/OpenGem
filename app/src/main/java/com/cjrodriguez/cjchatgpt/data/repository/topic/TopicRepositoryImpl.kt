@@ -33,7 +33,7 @@ class TopicRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun deleteTopic(topicId: String): Flow<DataState<Unit>> {
+    override fun deleteTopic(topicId: String): Flow<DataState<String>> {
         return deleteTopicAndChats.execute(topicId)
     }
 

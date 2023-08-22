@@ -1,6 +1,7 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,13 +52,15 @@ fun TopicScreen(
     allTopics: LazyPagingItems<Topic>,
     messageSet: ImmutableSet<GenericMessageInfo>,
     onTriggerEvents: (TopicListEvents) -> Unit,
-    onBackPressed: (topicId: String) -> Unit
+    setIdToNavigateToAndOnBackPressed: () -> Unit
 ) {
 
     val snackBarHostState = remember { SnackbarHostState() }
     var shouldShowDeleteDialog by remember { mutableStateOf(false) }
     var shouldShowRenameDialog by remember { mutableStateOf(false) }
     var selectedTopic by remember { mutableStateOf(Topic("", "")) }
+
+    BackHandler(onBack = setIdToNavigateToAndOnBackPressed)
 
     CjChatGPTTheme(
         messageSet = messageSet,
@@ -100,7 +102,7 @@ fun TopicScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(
-                        onClick = { onBackPressed("") },
+                        onClick = { setIdToNavigateToAndOnBackPressed() },
                         modifier = Modifier
                     ) {
                         Icon(
@@ -160,7 +162,9 @@ fun TopicScreen(
                                 items(count = allTopics.itemCount) { index ->
                                     allTopics[index]?.let { topic ->
                                         TopicCard(topic = topic, onSelectTopic = {
-                                            onBackPressed(it)
+                                            //onBackPressed(it)
+                                                                                 onTriggerEvents(TopicListEvents.SetTopic(it))
+                                            setIdToNavigateToAndOnBackPressed()
                                         }, deleteTopic = {
                                             selectedTopic = topic
                                             shouldShowDeleteDialog = true

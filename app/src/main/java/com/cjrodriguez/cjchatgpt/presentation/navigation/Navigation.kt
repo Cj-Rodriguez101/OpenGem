@@ -5,14 +5,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.util.CHAT_KEY
-import com.cjrodriguez.cjchatgpt.data.util.CHAT_SCREEN
-import com.cjrodriguez.cjchatgpt.data.util.TOPIC_SCREEN
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatScreen
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatViewModel
@@ -24,8 +24,8 @@ import kotlinx.collections.immutable.toImmutableSet
 fun Navigation(status: ConnectivityObserver.Status) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "chatScreen") {
-        composable(CHAT_SCREEN) { backStackEntry ->
+    NavHost(navController = navController, startDestination = Screen.ChatScreen.route) {
+        composable(Screen.ChatScreen.route) { backStackEntry ->
 
             val chatViewModel = hiltViewModel<ChatViewModel>()
 
@@ -40,6 +40,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
 
             val message by chatViewModel.message.collectAsStateWithLifecycle()
             val topicTitle by chatViewModel.topicTitle.collectAsStateWithLifecycle(initialValue = "")
+            val topicId by chatViewModel.selectedTopicId.collectAsStateWithLifecycle(initialValue = "")
             val isGpt3 by chatViewModel.isGpt3.collectAsStateWithLifecycle()
             val wordCount by chatViewModel.wordCount.collectAsStateWithLifecycle()
             val upperLimit by chatViewModel.upperLimit.collectAsStateWithLifecycle()
@@ -58,27 +59,28 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 isLoading = isLoading,
                 messageSet = messageSet.toImmutableSet(),
                 topicTitle = topicTitle ?: "",
+                topicId = topicId,
                 navigateToHistoryScreen =
                 {
-                    navController.navigate(route = TOPIC_SCREEN)
+                    navController.navigate(route = Screen.TopicScreen.route+"/{$it}")
                 },
                 onTriggerEvent = chatViewModel::onTriggerEvent
             )
         }
-        composable(TOPIC_SCREEN) {
+        composable(route = Screen.TopicScreen.route+"/{topicId}",
+            arguments = listOf(navArgument("topicId") { type = NavType.StringType })) {
             val topicViewModel = hiltViewModel<TopicViewModel>()
             val query by topicViewModel.query.collectAsStateWithLifecycle()
+            //val currentTopicId by topicViewModel.currentTopicId.collectAsStateWithLifecycle()
             val messageSet by topicViewModel.messageSet.collectAsStateWithLifecycle()
             TopicScreen(query = query, onTriggerEvents = topicViewModel::onTriggerEvent,
                 messageSet = messageSet.toImmutableSet(),
                 allTopics = topicViewModel.topicPagingFlow.collectAsLazyPagingItems(),
-                onBackPressed = { topicId ->
-                    if (topicId.isNotEmpty()) {
-                        navController.previousBackStackEntry?.savedStateHandle?.set(
-                            CHAT_KEY,
-                            topicId
-                        )
-                    }
+                setIdToNavigateToAndOnBackPressed = {
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        CHAT_KEY,
+                        topicViewModel.currentTopicId.value
+                    )
                     navController.popBackStack()
                 })
         }

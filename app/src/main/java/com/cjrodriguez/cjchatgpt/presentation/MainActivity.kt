@@ -1,7 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
@@ -21,7 +20,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val status by connectivityObserver.observe()
                 .collectAsStateWithLifecycle(initialValue = ConnectivityObserver.Status.Unavailable)
-            Log.e("status", status.name)
             Navigation(status)
         }
     }

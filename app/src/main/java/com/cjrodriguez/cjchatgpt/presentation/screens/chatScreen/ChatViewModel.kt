@@ -1,7 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 
 import android.util.Log
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -22,7 +21,7 @@ import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -39,8 +38,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _message: MutableStateFlow<String> = MutableStateFlow("")
@@ -52,6 +51,7 @@ class ChatViewModel @Inject constructor(
     val messageSet: StateFlow<Set<GenericMessageInfo>> = _messageSet
 
     private val _selectedTopicId: MutableStateFlow<String> = MutableStateFlow("")
+    val selectedTopicId: StateFlow<String> = _selectedTopicId
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val chatPagingFlow: Flow<PagingData<Chat>> =
@@ -192,7 +192,7 @@ class ChatViewModel @Inject constructor(
         }
 
         _cancellableCoroutineScope.value = viewModelScope.launch {
-            withContext(Dispatchers.IO) {
+            withContext(coroutineDispatcher) {
                 chatRepository.getAndStoreChatResponse(
                     message = _message.value.trim(), isNewChat = isNewChat,
                     isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,

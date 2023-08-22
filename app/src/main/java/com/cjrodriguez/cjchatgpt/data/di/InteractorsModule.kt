@@ -20,8 +20,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.scopes.ViewModelScoped
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 @Module
 @InstallIn(ViewModelComponent::class)
@@ -45,13 +43,11 @@ object InteractorsModule {
     @Provides
     fun provideDeleteTopicAndChats(
         baseApplication: BaseApplication,
-        chatTopicDao: ChatTopicDao,
-        coroutineDispatcher: CoroutineDispatcher
+        chatTopicDao: ChatTopicDao
     ): DeleteTopicAndChats {
         return DeleteTopicAndChats(
             baseApplication.applicationContext,
-            chatTopicDao,
-            coroutineDispatcher
+            chatTopicDao
         )
     }
 
@@ -59,13 +55,11 @@ object InteractorsModule {
     @Provides
     fun provideRenameTopic(
         baseApplication: BaseApplication,
-        chatTopicDao: ChatTopicDao,
-        coroutineDispatcher: CoroutineDispatcher
+        chatTopicDao: ChatTopicDao
     ): RenameTopic {
         return RenameTopic(
             baseApplication.applicationContext,
-            chatTopicDao,
-            coroutineDispatcher
+            chatTopicDao
         )
     }
 
@@ -79,12 +73,6 @@ object InteractorsModule {
             baseApplication = baseApplication,
             clipboardManager = clipboardManager
         )
-    }
-
-    @ViewModelScoped
-    @Provides
-    fun provideCoroutineDispatcher(): CoroutineDispatcher {
-        return Dispatchers.IO
     }
 
     @ViewModelScoped

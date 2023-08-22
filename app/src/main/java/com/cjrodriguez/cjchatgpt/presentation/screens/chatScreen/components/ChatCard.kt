@@ -113,12 +113,6 @@ fun ChatCard(
                 }
             }
 
-//            HtmlTextView(
-//                html = chat.content,
-//                //fontSize = 14.sp,
-//            )
-//            Log.e("una", chat.content)
-
             DropdownMenu(
                 expanded = isExpanded, onDismissRequest = { isExpanded = false },
                 offset = DpOffset(x = 100.dp, y = (-242).dp)
@@ -141,25 +135,6 @@ fun ChatCard(
                         )
                     }
                 })
-                //Maybe later for regenerate
-//                DropdownMenuItem(onClick = {
-//                    isExpanded = false
-//                    regenerateResponse() }, text = {
-//                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier = Modifier
-//                            .width(150.dp)
-//                            .padding(8.dp)
-//                    ) {
-//                        Icon(imageVector = Icons.Default.Refresh, contentDescription = "Regenerate")
-//                        Text(
-//                            text = "Regenerate",
-//                            fontSize = 16.sp,
-//                            modifier = Modifier.padding(start = 16.dp)
-//                        )
-//                    }
-//                })
-
             }
         }
     }
@@ -167,7 +142,6 @@ fun ChatCard(
 
 @Composable
 fun HtmlTextView(html: String, modifier: Modifier = Modifier, textColor: Int) {
-    //val color = MaterialTheme.colorScheme.onBackground
     AndroidView(
         modifier = modifier.then(
             Modifier

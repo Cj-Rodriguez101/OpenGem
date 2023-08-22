@@ -1,7 +1,5 @@
 package com.cjrodriguez.cjchatgpt.data.util
 
-import android.util.Base64
-
 const val GPT_3 = "gpt-3.5-turbo"
 const val GPT_4 = "gpt-4"
 const val CHAT_DB = "Chat.db"
@@ -11,45 +9,7 @@ const val TOPIC_SCREEN = "topicScreen"
 const val GPT_SETTINGS = "settings"
 const val PRE_TAG = "pre-wrap"
 const val CHAT_KEY = "key"
-
-fun String.toByteArrayCustom(): ByteArray {
-    return try {
-//        val byteArrayStream = ByteArrayOutputStream(this.length)
-//        val gzip = GZIPOutputStream(byteArrayStream)
-//        gzip.use {outputStream->
-//            outputStream.write(this.toByteArray())
-//        }
-//        val byteArray = byteArrayStream.toByteArray()
-//        byteArrayStream.close()
-//        byteArray
-        Base64.encode(this.toByteArray(), Base64.DEFAULT)
-    } catch (ex: Exception) {
-        byteArrayOf()
-    }
-}
-
-//No Need For HuffMan Because Base64 retains formatting
-fun ByteArray.toCustomString(): String {
-    return try {
-//        val bis = ByteArrayInputStream(this)
-//        val gis = GZIPInputStream(bis)
-//        val br = BufferedReader(InputStreamReader(gis, "UTF-8"))
-//        val sb = StringBuilder()
-//        var line: String?
-//        while (br.readLine().also { line = it } != null) {
-//            sb.append(line)
-//        }
-//        br.close()
-//        gis.close()
-//        bis.close()
-        val sb = String(Base64.decode(this, Base64.DEFAULT))
-        val output = sb.transformTextToHtml()
-        //Log.e("sb", output)
-        output
-    } catch (ex: Exception) {
-        ""
-    }
-}
+const val SUCCESS = "success"
 
 fun String.transformTextToHtml(): String {
 
@@ -154,5 +114,5 @@ fun generateRandomId(): String {
     return (1..20)
         .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
         .map(charPool::get)
-        .joinToString("");
+        .joinToString("")
 }

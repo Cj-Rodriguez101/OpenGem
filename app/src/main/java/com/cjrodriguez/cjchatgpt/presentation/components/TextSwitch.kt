@@ -25,49 +25,62 @@ import androidx.compose.ui.unit.sp
 @Preview
 @Composable
 fun TextSwitch(
+    modifier: Modifier = Modifier,
     options: List<String> = listOf("GPT 3.5", "GPT 4"),
     selectedState: Boolean = false,
-    modifier: Modifier = Modifier,
     changeSelectedItem: () -> Unit = {},
-){
+) {
     val isDarkMode = isSystemInDarkTheme()
-    Row(horizontalArrangement = Arrangement.spacedBy(0.dp),
-        modifier = modifier.then(Modifier.height(40.dp)
-            .width(250.dp)
-            .clickable (onClick = changeSelectedItem)
-            .background(Color.Transparent, MaterialTheme.shapes.large)
-            .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large)),
-        verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .clickable (onClick = changeSelectedItem)
-            .background(
-                color = if (!selectedState) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = MaterialTheme.shapes.large
-            ), verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = options[0], fontSize = 16.sp, textAlign = TextAlign.Center,
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        modifier = modifier.then(
+            Modifier
+                .height(40.dp)
+                .width(250.dp)
+                .clickable(onClick = changeSelectedItem)
+                .background(Color.Transparent, MaterialTheme.shapes.large)
+                .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large)
+        ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clickable(onClick = changeSelectedItem)
+                .background(
+                    color = if (!selectedState) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = MaterialTheme.shapes.large
+                ), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = options[0], fontSize = 16.sp, textAlign = TextAlign.Center,
                 fontWeight = if (!selectedState) FontWeight.Bold else FontWeight.Normal,
                 color = if (!selectedState) MaterialTheme.colorScheme.background else {
                     if (isDarkMode) Color.White else Color.Black
-                })
+                }
+            )
         }
 
-        Column(modifier = Modifier
-            .weight(1f)
-            .fillMaxHeight()
-            .clickable (onClick = changeSelectedItem)
-            .background(
-                color = if (selectedState) MaterialTheme.colorScheme.primary else Color.Transparent,
-                shape = MaterialTheme.shapes.large
-            ), verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = options[1], fontSize = 16.sp, textAlign = TextAlign.Center,
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clickable(onClick = changeSelectedItem)
+                .background(
+                    color = if (selectedState) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = MaterialTheme.shapes.large
+                ), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = options[1], fontSize = 16.sp, textAlign = TextAlign.Center,
                 fontWeight = if (selectedState) FontWeight.Bold else FontWeight.Normal,
                 color = if (selectedState) MaterialTheme.colorScheme.background else {
                     if (isDarkMode) Color.White else Color.Black
-                })
+                }
+            )
         }
         //}
     }

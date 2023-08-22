@@ -3,7 +3,6 @@ package com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -12,7 +11,7 @@ import kotlinx.coroutines.launch
 
 //phillip lackner-> https://github.com/philipplackner/ObserveConnectivity
 class NetworkConnectivityObserver(
-    private val context: Context
+    context: Context
 ): ConnectivityObserver {
 
     private val connectivityManager =

@@ -1,6 +1,5 @@
 package com.cjrodriguez.cjchatgpt.presentation.components
 
-import android.util.Log
 import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -15,7 +14,7 @@ import kotlinx.coroutines.launch
  *
  */
 class SnackbarController
-constructor(
+(
     private val scope: CoroutineScope,
     private val onRemoveHeadMessageFromQueue: ()-> Unit = {}
 ){
@@ -25,8 +24,6 @@ constructor(
     init {
         cancelActiveJob()
     }
-
-    fun getScope() = scope
 
     fun showSnackBar(
         snackBarHostState: SnackbarHostState,
@@ -39,23 +36,18 @@ constructor(
                     message = message,
                     actionLabel = actionLabel
                 )
-                Log.e("index here", "state changed here dismissed")
                 onRemoveHeadMessageFromQueue()
                 cancelActiveJob()
-                //onRemoveHeadMessageFromQueue()
             }
         }
         else{
             cancelActiveJob()
-            //onRemoveHeadMessageFromQueue()
             snackbarJob = scope.launch {
                 snackBarHostState.showSnackbar(
                     message = message,
                     actionLabel = actionLabel
                 )
-                Log.e("index here", "state changed here dismissed")
                 onRemoveHeadMessageFromQueue()
-                //onRemoveHeadMessageFromQueue()
                 cancelActiveJob()
             }
         }
@@ -64,8 +56,6 @@ constructor(
     private fun cancelActiveJob(){
         snackbarJob?.let { job ->
             job.cancel()
-            //onRemoveHeadMessageFromQueue()
-            Log.e("index here", "state changed here dismissed hereeee")
             snackbarJob = Job()
         }
     }

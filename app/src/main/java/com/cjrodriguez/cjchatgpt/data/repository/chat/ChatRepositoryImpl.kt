@@ -20,7 +20,7 @@ import javax.inject.Inject
 class ChatRepositoryImpl @Inject constructor(
     private val getChatResponse: GetChatResponse,
     private val copyTextToClipBoard: CopyTextToClipBoard,
-    private val dao: ChatTopicDao, //remove this later
+    private val dao: ChatTopicDao,
     private val settingsDataStore: SettingsDataStore
 ) : ChatRepository {
     override suspend fun getAndStoreChatResponse(
