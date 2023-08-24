@@ -15,7 +15,6 @@ ChatGpt App Using OpenAI api
 * Room
 * Kotlin DSL
 * Datastore
-* Media3 (Exoplayer)
 * Hilt
 
 ## Credits
