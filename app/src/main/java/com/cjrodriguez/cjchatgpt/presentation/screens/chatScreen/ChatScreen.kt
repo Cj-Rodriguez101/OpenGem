@@ -307,7 +307,7 @@ fun ChatScreen(
                                 }
                             }
                             if (isLoading) {
-                                LaunchedEffect(Unit) { listState.animateScrollToItem(0) }
+                                LaunchedEffect(allChats.itemCount) { listState.scrollToItem(0) }
                             }
                         }
 

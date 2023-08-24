@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.hiltAndroid)
-    //alias(libs.plugins.kspAndroid)
     id("com.google.devtools.ksp")
     kotlin("kapt")
 }

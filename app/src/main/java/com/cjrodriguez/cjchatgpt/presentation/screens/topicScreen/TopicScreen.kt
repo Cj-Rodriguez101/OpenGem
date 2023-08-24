@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemKey
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.domain.events.TopicListEvents
 import com.cjrodriguez.cjchatgpt.domain.model.Topic
@@ -159,7 +160,8 @@ fun TopicScreen(
                                 verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                items(count = allTopics.itemCount) { index ->
+                                items(count = allTopics.itemCount,
+                                    key = allTopics.itemKey(Topic::id)) { index ->
                                     allTopics[index]?.let { topic ->
                                         TopicCard(topic = topic, onSelectTopic = {
                                             //onBackPressed(it)

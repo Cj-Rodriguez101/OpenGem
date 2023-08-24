@@ -47,15 +47,12 @@ class GetChatResponse @Inject constructor(
 
             if (!isCurrentlyConnectedToInternet) {
                 errorMessage = context.getString(R.string.no_internet_available)
-                emit(
-                    DataState.error(
-                        message = GenericMessageInfo
-                            .Builder().id("GetChatResponse.Error")
-                            .title(context.getString(R.string.error))
-                            .description(errorMessage)
-                            .uiComponentType(UIComponentType.Dialog)
-                    )
-                )
+                emit(DataState.data(data = if (isNewChat) {""} else topicId,
+                    message = GenericMessageInfo
+                        .Builder().id("GetChatResponse.Error")
+                        .title(context.getString(R.string.error))
+                        .description(errorMessage)
+                        .uiComponentType(UIComponentType.Dialog)))
                 return@flow
             }
             val chatCompletionNew = getOpenAiResponseFlow(message, model)
