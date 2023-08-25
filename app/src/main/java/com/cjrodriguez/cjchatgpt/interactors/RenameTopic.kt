@@ -1,9 +1,9 @@
-package com.cjrodriguez.cjchatgpt.data.interactors
+package com.cjrodriguez.cjchatgpt.interactors
 
 import android.content.Context
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
-import com.cjrodriguez.cjchatgpt.data.util.SUCCESS
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
@@ -11,28 +11,27 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class DeleteTopicAndChats @Inject constructor(
+class RenameTopic @Inject constructor(
     private val context: Context,
-    private val dao: ChatTopicDao,
+    private val dao: ChatTopicDao
 ) {
 
-    fun execute(topicId: String): Flow<DataState<String>> = flow {
+    fun execute(topicEntity: TopicEntity): Flow<DataState<Unit>> = flow {
 
         var errorMessage = ""
 
         try {
-            dao.deleteTopicAndMessagesWithTopicId(topicId)
+            dao.insertTopic(topicEntity)
         } catch (ex: Exception) {
             errorMessage = ex.message.toString()
         }
 
         if (errorMessage.isEmpty()) {
             emit(
-                DataState.data( data = SUCCESS,
+                DataState.data(
                     message = GenericMessageInfo
-                        .Builder().id("DeleteTopicAndChats.Success")
-                        .title(context.getString(R.string.success))
-                        .description(context.getString(R.string.successfully_deleted_topic))
+                        .Builder().id("RenameTopic.Success")
+                        .title(context.getString(R.string.successfully_renamed_topic))
                         .uiComponentType(UIComponentType.SnackBar)
                 )
             )
@@ -40,7 +39,7 @@ class DeleteTopicAndChats @Inject constructor(
             emit(
                 DataState.error(
                     message = GenericMessageInfo
-                        .Builder().id("DeleteTopicAndChats.Error")
+                        .Builder().id("RenameTopic.Error")
                         .title(context.getString(R.string.error))
                         .description(errorMessage)
                         .uiComponentType(UIComponentType.Dialog)

@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.presentation.components
+package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

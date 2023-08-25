@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.presentation.components
+package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -7,11 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay

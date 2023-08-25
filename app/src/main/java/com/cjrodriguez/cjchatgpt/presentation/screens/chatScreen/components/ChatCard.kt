@@ -115,7 +115,7 @@ fun ChatCard(
 
             DropdownMenu(
                 expanded = isExpanded, onDismissRequest = { isExpanded = false },
-                offset = DpOffset(x = 100.dp, y = (-242).dp)
+                offset = DpOffset(x = 100.dp, y = 0.dp)
             ) {
                 DropdownMenuItem(onClick = {
                     isExpanded = false

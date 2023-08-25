@@ -13,7 +13,7 @@ ktor = "2.2.4"
 hilt = "2.45"
 hilt-compose = "1.0.0"
 hilt-navigation = "1.0.0"
-accompanist = "0.26.1-alpha"
+accompanist = "0.28.0"
 constraint = "1.0.1"
 runtime-compose = "2.6.1"
 icons = "1.5.0"
@@ -23,7 +23,7 @@ dataStore = "1.0.0"
 paging-compose = "3.2.0"
 paging-runtime = "3.2.0"
 navigation = "2.7.0"
-foundation = "1.6.0-alpha01"
+foundation = "1.6.0-alpha01" #alpha 03 has issues
 immutable = "0.3.5"
 
 [libraries]

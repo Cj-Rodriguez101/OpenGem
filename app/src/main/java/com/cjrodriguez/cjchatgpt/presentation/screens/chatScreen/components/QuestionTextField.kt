@@ -48,12 +48,12 @@ fun QuestionTextField(
 ) {
 
     Column(
-        modifier = modifier.then(
-            Modifier
-                .imePadding()
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
+        modifier = modifier
+            .then(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
 
     ) {
         OutlinedTextField(
@@ -78,7 +78,7 @@ fun QuestionTextField(
                     color = MaterialTheme.colorScheme.error
                 )
                 ConstraintLayout(
-                    modifier = Modifier
+                    modifier = Modifier.imePadding()
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 ) {
@@ -88,7 +88,6 @@ fun QuestionTextField(
                         .constrainAs(closeButton) {
                             start.linkTo(parent.start)
                             top.linkTo(parent.top)
-                            //bottom.linkTo(parent.bottom)
                         }) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
@@ -113,7 +112,6 @@ fun QuestionTextField(
                     Text(text = "$wordCount / $upperLimit", modifier = Modifier.constrainAs(noCount) {
                         end.linkTo(sendButton.start, margin = 16.dp)
                         top.linkTo(parent.top)
-                        //bottom.linkTo(parent.bottom)
                     })
                 }
             }

@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.data.interactors
+package com.cjrodriguez.cjchatgpt.interactors
 
 import android.content.Context
 import com.aallam.openai.api.BetaOpenAI
@@ -11,6 +11,7 @@ import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.network.OpenApiConfig
+import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_PROMPT
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
@@ -31,7 +32,7 @@ class GetChatResponse @Inject constructor(
 ) {
 
     @OptIn(BetaOpenAI::class)
-    suspend fun execute(
+    fun execute(
         message: String,
         isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
@@ -57,7 +58,7 @@ class GetChatResponse @Inject constructor(
             }
             val chatCompletionNew = getOpenAiResponseFlow(message, model)
             val chatCompletionTopic =
-                getOpenAiResponseFlow("Summarize this message to 5 words max $message", model)
+                getOpenAiResponseFlow("$SUMMARIZE_PROMPT $message", model)
 
             val messageId = generateRandomId()
 
@@ -80,7 +81,6 @@ class GetChatResponse @Inject constructor(
                             val affectedRows =
                                 chatTopicDao.appendTextToContentMessage(messageId, it)
 
-                            // If no rows were affected, the item doesn't exist, so insert a new item.
                             if (affectedRows == 0) {
                                 chatTopicDao.insertChatResponse(
                                     ChatEntity(

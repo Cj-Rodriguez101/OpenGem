@@ -50,7 +50,6 @@ fun TopicCard(
     Card(
         modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
             .combinedClickable(onClick = { onSelectTopic(topic.id) }, onLongClick = {isExpanded = true})
-            //.clickable { onSelectTopic(topic.id) }
             .fillMaxWidth()
     ) {
         Row(
@@ -72,7 +71,7 @@ fun TopicCard(
 
         DropdownMenu(
             expanded = isExpanded, onDismissRequest = { isExpanded = false },
-            offset = DpOffset(x = 100.dp, y = (-242).dp)
+            offset = DpOffset(x = 100.dp, y = 0.dp)
         ) {
             DropdownMenuItem(onClick = {
                 isExpanded = false

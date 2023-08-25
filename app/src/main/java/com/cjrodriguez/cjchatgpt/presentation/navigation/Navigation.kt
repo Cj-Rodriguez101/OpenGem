@@ -15,9 +15,9 @@ import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.Connecti
 import com.cjrodriguez.cjchatgpt.data.util.CHAT_KEY
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatScreen
-import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatViewModel
+import com.cjrodriguez.cjchatgpt.presentation.viewmodels.ChatViewModel
 import com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen.TopicScreen
-import com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen.TopicViewModel
+import com.cjrodriguez.cjchatgpt.presentation.viewmodels.TopicViewModel
 import kotlinx.collections.immutable.toImmutableSet
 
 @Composable

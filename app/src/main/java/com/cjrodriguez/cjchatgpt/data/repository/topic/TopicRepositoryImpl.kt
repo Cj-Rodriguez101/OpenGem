@@ -6,8 +6,8 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
-import com.cjrodriguez.cjchatgpt.data.interactors.DeleteTopicAndChats
-import com.cjrodriguez.cjchatgpt.data.interactors.RenameTopic
+import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
+import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
 import com.cjrodriguez.cjchatgpt.domain.model.Topic
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.toTopic

@@ -1,8 +1,9 @@
-package com.cjrodriguez.cjchatgpt.data.interactors
+package com.cjrodriguez.cjchatgpt.interactors
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import com.cjrodriguez.cjchatgpt.R
+import com.cjrodriguez.cjchatgpt.data.util.PASSWORD
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
@@ -17,7 +18,7 @@ class CopyTextToClipBoard @Inject constructor(
 ) {
 
     fun execute(messageToCopy: String): Flow<DataState<Unit>> = flow {
-        clipboardManager.setPrimaryClip(ClipData.newPlainText("password", messageToCopy))
+        clipboardManager.setPrimaryClip(ClipData.newPlainText(PASSWORD, messageToCopy))
         emit(
             DataState.data(message = GenericMessageInfo
             .Builder().id("CopyTextToClipBoard.Success")

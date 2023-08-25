@@ -6,8 +6,8 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
-import com.cjrodriguez.cjchatgpt.data.interactors.CopyTextToClipBoard
-import com.cjrodriguez.cjchatgpt.data.interactors.GetChatResponse
+import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
+import com.cjrodriguez.cjchatgpt.interactors.GetChatResponse
 import com.cjrodriguez.cjchatgpt.data.util.GPT_3
 import com.cjrodriguez.cjchatgpt.data.util.GPT_4
 import com.cjrodriguez.cjchatgpt.domain.model.Chat

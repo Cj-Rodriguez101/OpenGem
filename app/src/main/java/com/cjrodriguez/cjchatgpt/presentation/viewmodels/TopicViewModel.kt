@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen
+package com.cjrodriguez.cjchatgpt.presentation.viewmodels
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle

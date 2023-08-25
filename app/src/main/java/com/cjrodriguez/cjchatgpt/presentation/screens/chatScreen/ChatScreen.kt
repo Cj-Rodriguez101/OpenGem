@@ -1,5 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -60,13 +63,14 @@ import com.cjrodriguez.cjchatgpt.data.util.revertCodeOrPlainHtmlBackToHtml
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
-import com.cjrodriguez.cjchatgpt.presentation.components.AnimateTypewriterText
-import com.cjrodriguez.cjchatgpt.presentation.components.TextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AnimateTypewriterText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ChatCard
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.QuestionTextField
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.TextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
 
@@ -92,6 +96,15 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    val imeState = rememberImeState()
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(key1 = imeState.value) {
+        if (imeState.value){
+            scrollState.animateScrollTo(scrollState.maxValue, tween(300))
+        }
+    }
 
     CjChatGPTTheme(
         messageSet = messageSet,
@@ -226,7 +239,7 @@ fun ChatScreen(
                     ConstraintLayout(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues)
+                            .padding(paddingValues).verticalScroll(scrollState)
                     ) {
                         val (switch, chatSpace, textField, title) = createRefs()
 
@@ -269,7 +282,10 @@ fun ChatScreen(
                                 AnimateTypewriterText(
                                     baseText = "●",
                                     highlightText = "here",
-                                    parts = listOf("Wait", "Hold Up", "Let Him Cook")
+                                    parts = listOf(stringResource(R.string.wait),
+                                        stringResource(R.string.hold_up),
+                                        stringResource(R.string.let_him_cook)
+                                    )
                                 )
                             }
                         } else {
@@ -324,11 +340,13 @@ fun ChatScreen(
                             cancelMessageGeneration = {
                                 onTriggerEvent(ChatListEvents.CancelChatGeneration)
                             },
-                            modifier = Modifier.constrainAs(textField) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            })
+                            modifier = Modifier
+                                .constrainAs(textField) {
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }
+                        )
                     }
                 }
             }

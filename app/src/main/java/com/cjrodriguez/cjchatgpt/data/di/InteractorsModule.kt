@@ -6,10 +6,10 @@ import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.NetworkConnectivityObserver
-import com.cjrodriguez.cjchatgpt.data.interactors.CopyTextToClipBoard
-import com.cjrodriguez.cjchatgpt.data.interactors.DeleteTopicAndChats
-import com.cjrodriguez.cjchatgpt.data.interactors.GetChatResponse
-import com.cjrodriguez.cjchatgpt.data.interactors.RenameTopic
+import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
+import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
+import com.cjrodriguez.cjchatgpt.interactors.GetChatResponse
+import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepositoryImpl
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepository

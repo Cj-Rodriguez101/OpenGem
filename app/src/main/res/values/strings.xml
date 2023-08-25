@@ -17,4 +17,7 @@
     <string name="no_chats_present">No Chats Present</string>
     <string name="new_name">New Name</string>
     <string name="no_internet_available">No Internet Available</string>
+    <string name="wait">Wait</string>
+    <string name="hold_up">Hold Up</string>
+    <string name="let_him_cook">Let Him Cook</string>
 </resources>

@@ -10,6 +10,8 @@ const val GPT_SETTINGS = "settings"
 const val PRE_TAG = "pre-wrap"
 const val CHAT_KEY = "key"
 const val SUCCESS = "success"
+const val PASSWORD = "password"
+const val SUMMARIZE_PROMPT = "Summarize this message to 5 words max"
 
 fun String.transformTextToHtml(): String {
 
