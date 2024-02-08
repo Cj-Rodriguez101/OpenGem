@@ -15,8 +15,8 @@ import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.Connecti
 import com.cjrodriguez.cjchatgpt.data.util.CHAT_KEY
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatScreen
-import com.cjrodriguez.cjchatgpt.presentation.viewmodels.ChatViewModel
 import com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen.TopicScreen
+import com.cjrodriguez.cjchatgpt.presentation.viewmodels.ChatViewModel
 import com.cjrodriguez.cjchatgpt.presentation.viewmodels.TopicViewModel
 import kotlinx.collections.immutable.toImmutableSet
 
@@ -41,7 +41,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val message by chatViewModel.message.collectAsStateWithLifecycle()
             val topicTitle by chatViewModel.topicTitle.collectAsStateWithLifecycle(initialValue = "")
             val topicId by chatViewModel.selectedTopicId.collectAsStateWithLifecycle(initialValue = "")
-            val isGpt3 by chatViewModel.isGpt3.collectAsStateWithLifecycle()
+            val selectedAi by chatViewModel.aiType.collectAsStateWithLifecycle()
             val wordCount by chatViewModel.wordCount.collectAsStateWithLifecycle()
             val upperLimit by chatViewModel.upperLimit.collectAsStateWithLifecycle()
             val errorMessage by chatViewModel.errorMessage.collectAsStateWithLifecycle()
@@ -49,7 +49,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val messageSet by chatViewModel.messageSet.collectAsStateWithLifecycle()
             val allChats = chatViewModel.chatPagingFlow.collectAsLazyPagingItems()
             ChatScreen(
-                isGpt3 = isGpt3,
+                selectedAiType = selectedAi,
                 allChats = allChats,
                 message = message,
                 wordCount = wordCount,
@@ -62,16 +62,17 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 topicId = topicId,
                 navigateToHistoryScreen =
                 {
-                    navController.navigate(route = Screen.TopicScreen.route+"/{$it}")
+                    navController.navigate(route = Screen.TopicScreen.route + "/{$it}")
                 },
                 onTriggerEvent = chatViewModel::onTriggerEvent
             )
         }
-        composable(route = Screen.TopicScreen.route+"/{topicId}",
-            arguments = listOf(navArgument("topicId") { type = NavType.StringType })) {
+        composable(
+            route = Screen.TopicScreen.route + "/{topicId}",
+            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+        ) {
             val topicViewModel = hiltViewModel<TopicViewModel>()
             val query by topicViewModel.query.collectAsStateWithLifecycle()
-            //val currentTopicId by topicViewModel.currentTopicId.collectAsStateWithLifecycle()
             val messageSet by topicViewModel.messageSet.collectAsStateWithLifecycle()
             TopicScreen(query = query, onTriggerEvents = topicViewModel::onTriggerEvent,
                 messageSet = messageSet.toImmutableSet(),

@@ -5,7 +5,8 @@ import androidx.room.Room
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatDatabase
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
-import com.cjrodriguez.cjchatgpt.data.datasource.network.OpenApiConfig
+import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
+import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.util.CHAT_DB
 import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import dagger.Module
@@ -29,8 +30,14 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideOpenApiConfig(): OpenApiConfig{
+    fun provideOpenApiConfig(): OpenApiConfig {
         return OpenApiConfig
+    }
+
+    @Singleton
+    @Provides
+    fun provideGeminoModelApi(): GeminiModelApi {
+        return GeminiModelApi
     }
 
     @Singleton
@@ -43,7 +50,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideSongDao(chatDatabase: ChatDatabase): ChatTopicDao{
+    fun provideSongDao(chatDatabase: ChatDatabase): ChatTopicDao {
         return chatDatabase.chatTopicDao()
     }
 

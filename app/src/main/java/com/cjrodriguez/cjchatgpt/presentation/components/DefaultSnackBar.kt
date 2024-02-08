@@ -14,29 +14,36 @@ import androidx.compose.ui.graphics.Color
 fun DefaultSnackBar(
     snackBarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
-    onDismiss: ()-> Unit,
-){
-    if (snackBarHostState.currentSnackbarData == null) { return }
+    onDismiss: () -> Unit,
+) {
+    if (snackBarHostState.currentSnackbarData == null) {
+        return
+    }
 
-    SnackbarHost(hostState = snackBarHostState,
-        snackbar = {data->
+    SnackbarHost(
+        hostState = snackBarHostState,
+        snackbar = { data ->
             Snackbar(
                 containerColor = MaterialTheme.colorScheme.primary,
                 action = {
-                    data.visuals.actionLabel?.let { actionLabel->
+                    data.visuals.actionLabel?.let { actionLabel ->
                         TextButton(onClick = {
                             onDismiss()
                         }) {
-                            Text(text = actionLabel,
+                            Text(
+                                text = actionLabel,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color.White)
+                                color = Color.White
+                            )
                         }
                     }
                 }
             ) {
-                Text(text = data.visuals.message,
+                Text(
+                    text = data.visuals.message,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White)
+                    color = Color.White
+                )
             }
         }, modifier = modifier
     )

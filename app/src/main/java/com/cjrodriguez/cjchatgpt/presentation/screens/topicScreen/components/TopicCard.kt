@@ -48,8 +48,11 @@ fun TopicCard(
     var isExpanded by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp)
-            .combinedClickable(onClick = { onSelectTopic(topic.id) }, onLongClick = {isExpanded = true})
+        modifier = Modifier
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+            .combinedClickable(
+                onClick = { onSelectTopic(topic.id) },
+                onLongClick = { isExpanded = true })
             .fillMaxWidth()
     ) {
         Row(

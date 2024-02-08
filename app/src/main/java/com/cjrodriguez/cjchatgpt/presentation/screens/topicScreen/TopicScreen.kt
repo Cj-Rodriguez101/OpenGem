@@ -66,24 +66,36 @@ fun TopicScreen(
     CjChatGPTTheme(
         messageSet = messageSet,
         snackBarHostState = snackBarHostState,
-        onRemoveHeadMessageFromQueue = { onTriggerEvents(TopicListEvents
-            .OnRemoveHeadMessageFromQueue) }
+        onRemoveHeadMessageFromQueue = {
+            onTriggerEvents(
+                TopicListEvents
+                    .OnRemoveHeadMessageFromQueue
+            )
+        }
     ) {
 
         if (shouldShowDeleteDialog) {
             DeleteDialog(
                 onDismiss = { shouldShowDeleteDialog = false },
-                onPositiveAction = { onTriggerEvents(TopicListEvents
-                    .DeleteTopic(selectedTopic.id)) })
+                onPositiveAction = {
+                    onTriggerEvents(
+                        TopicListEvents
+                            .DeleteTopic(selectedTopic.id)
+                    )
+                })
         }
 
         if (shouldShowRenameDialog) {
             RenameDialog(
                 topic = selectedTopic,
                 onDismiss = { shouldShowRenameDialog = false },
-                onPositiveAction = { onTriggerEvents(TopicListEvents
-                    .RenameTopic(selectedTopic)) },
-                onTextChanged = {selectedTopic = selectedTopic.copy(title = it)})
+                onPositiveAction = {
+                    onTriggerEvents(
+                        TopicListEvents
+                            .RenameTopic(selectedTopic)
+                    )
+                },
+                onTextChanged = { selectedTopic = selectedTopic.copy(title = it) })
         }
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -160,12 +172,14 @@ fun TopicScreen(
                                 verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                items(count = allTopics.itemCount,
-                                    key = allTopics.itemKey(Topic::id)) { index ->
+                                items(
+                                    count = allTopics.itemCount,
+                                    key = allTopics.itemKey(Topic::id)
+                                ) { index ->
                                     allTopics[index]?.let { topic ->
                                         TopicCard(topic = topic, onSelectTopic = {
                                             //onBackPressed(it)
-                                                                                 onTriggerEvents(TopicListEvents.SetTopic(it))
+                                            onTriggerEvents(TopicListEvents.SetTopic(it))
                                             setIdToNavigateToAndOnBackPressed()
                                         }, deleteTopic = {
                                             selectedTopic = topic

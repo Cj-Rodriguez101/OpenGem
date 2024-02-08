@@ -26,13 +26,15 @@ interface ChatTopicDao {
     fun deleteTopicId(id: String)
 
     @Transaction
-    fun deleteTopicAndMessagesWithTopicId(topicId: String){
+    fun deleteTopicAndMessagesWithTopicId(topicId: String) {
         deleteTopicId(topicId)
         deleteAllMessagesWithTopic(topicId)
     }
 
-    @Query("UPDATE chatTable SET expandedContent = expandedContent" +
-            " || :textToAppend WHERE messageId = :messageId")
+    @Query(
+        "UPDATE chatTable SET expandedContent = expandedContent" +
+                " || :textToAppend WHERE messageId = :messageId"
+    )
     fun appendTextToContentMessage(messageId: String, textToAppend: String): Int
 
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
@@ -41,8 +43,10 @@ interface ChatTopicDao {
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex DESC")
     fun getAllChatsFromTopic(topicId: String): PagingSource<Int, ChatEntity>
 
-    @Query("SELECT * FROM topicTable WHERE title LIKE '%' || :query || '%'" +
-            " OR  :query  = '' ORDER BY title COLLATE NOCASE ASC")
+    @Query(
+        "SELECT * FROM topicTable WHERE title LIKE '%' || :query || '%'" +
+                " OR  :query  = '' ORDER BY title COLLATE NOCASE ASC"
+    )
     fun searchTopics(query: String): PagingSource<Int, TopicEntity>
 
     @Query("SELECT * FROM topicTable LIMIT 1")

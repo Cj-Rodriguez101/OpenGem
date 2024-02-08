@@ -1,7 +1,10 @@
 package com.cjrodriguez.cjchatgpt.data.util
 
-const val GPT_3 = "gpt-3.5-turbo"
-const val GPT_4 = "gpt-4"
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
+
+const val GPT_3 = "GPT3"
 const val CHAT_DB = "Chat.db"
 const val GPT_VERSION_KEY = "gptVersionKey"
 const val CHAT_SCREEN = "chatScreen"
@@ -53,7 +56,6 @@ fun String.revertHtmlToPlainText(): String {
 
     return plainText
 }
-
 
 fun String.dividePlainHtmlAndCode(): List<Pair<String, Boolean>> {
 
@@ -117,4 +119,46 @@ fun generateRandomId(): String {
         .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
         .map(charPool::get)
         .joinToString("")
+}
+
+fun storeAndAppendTopic(
+    topicId: String,
+    it: String,
+    chatTopicDao: ChatTopicDao
+) {
+    val affectedRows = chatTopicDao.appendTextToTopicTitle(
+        topicId,
+        it
+    )
+
+    if (affectedRows == 0) {
+        chatTopicDao.insertTopic(
+            TopicEntity(
+                id = topicId, title = it
+            )
+        )
+    }
+}
+
+fun storeAndAppendResponse(
+    messageId: String,
+    it: String,
+    topicId: String,
+    lastCreatedIndex: Int,
+    chatTopicDao: ChatTopicDao
+) {
+    val affectedRows =
+        chatTopicDao.appendTextToContentMessage(messageId, it)
+
+    if (affectedRows == 0) {
+        chatTopicDao.insertChatResponse(
+            ChatEntity(
+                messageId = messageId,
+                topicId = topicId,
+                expandedContent = it,
+                isUserGenerated = false,
+                lastCreatedIndex = lastCreatedIndex + 2
+            )
+        )
+    }
 }

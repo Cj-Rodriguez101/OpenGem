@@ -55,7 +55,7 @@ class TopicViewModel @Inject constructor(
                 setQuery(events.query)
             }
 
-            is TopicListEvents.SetTopic->{
+            is TopicListEvents.SetTopic -> {
                 _currentTopicId.value = events.topicId
             }
 
@@ -79,7 +79,7 @@ class TopicViewModel @Inject constructor(
                 topicRepository.deleteTopic(topicId).collectLatest { dataState ->
 
                     dataState.data?.let {
-                        if (it == SUCCESS && _currentTopicId.value == topicId){
+                        if (it == SUCCESS && _currentTopicId.value == topicId) {
                             _currentTopicId.value = ""
                         }
                     }

@@ -20,11 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
-import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
 import com.cjrodriguez.cjchatgpt.presentation.components.DefaultSnackBar
 import com.cjrodriguez.cjchatgpt.presentation.components.GenericDialog
 import com.cjrodriguez.cjchatgpt.presentation.components.SnackbarController
+import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 private val DarkColorScheme = darkColorScheme(
@@ -109,7 +109,9 @@ fun CjChatGPTTheme(
             DefaultSnackBar(
                 snackBarHostState = snackBarHostState,
                 onDismiss = { onRemoveHeadMessageFromQueue() },
-                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
             )
         }
     }

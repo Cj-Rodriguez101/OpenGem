@@ -1,6 +1,5 @@
 package com.cjrodriguez.cjchatgpt.domain.model
 
-
 data class Chat(
     val messageId: String = "",
     val topicId: String,

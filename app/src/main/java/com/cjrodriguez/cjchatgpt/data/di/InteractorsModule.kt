@@ -4,16 +4,18 @@ import android.content.ClipboardManager
 import android.content.Context
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
-import com.cjrodriguez.cjchatgpt.data.datasource.network.OpenApiConfig
+import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.NetworkConnectivityObserver
-import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
-import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
-import com.cjrodriguez.cjchatgpt.interactors.GetChatResponse
-import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
+import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepositoryImpl
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepository
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepositoryImpl
+import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
+import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
+import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
+import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
+import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
 import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import dagger.Module
 import dagger.Provides
@@ -27,14 +29,28 @@ object InteractorsModule {
 
     @ViewModelScoped
     @Provides
-    fun provideGetChatResponse(
+    fun provideGetOpenAiChatResponse(
         baseApplication: BaseApplication,
         openApiConfig: OpenApiConfig,
         chatTopicDao: ChatTopicDao
-    ): GetChatResponse {
-        return GetChatResponse(
+    ): GetOpenAiChatResponse {
+        return GetOpenAiChatResponse(
             baseApplication.applicationContext,
             openApiConfig,
+            chatTopicDao,
+        )
+    }
+
+    @ViewModelScoped
+    @Provides
+    fun provideGetGeminiChatResponse(
+        baseApplication: BaseApplication,
+        geminiModelApi: GeminiModelApi,
+        chatTopicDao: ChatTopicDao
+    ): GetGeminiChatResponse {
+        return GetGeminiChatResponse(
+            baseApplication.applicationContext,
+            geminiModelApi,
             chatTopicDao,
         )
     }
@@ -78,13 +94,16 @@ object InteractorsModule {
     @ViewModelScoped
     @Provides
     fun provideChatRepository(
-        getChatResponse: GetChatResponse,
+        getOpenAiChatResponse: GetOpenAiChatResponse,
+        getGeminiChatResponse: GetGeminiChatResponse,
         copyTextToClipBoard: CopyTextToClipBoard,
         settingsDataStore: SettingsDataStore,
         chatTopicDao: ChatTopicDao,
     ): ChatRepository {
         return ChatRepositoryImpl(
-            getChatResponse, copyTextToClipBoard,
+            getOpenAiChatResponse,
+            getGeminiChatResponse,
+            copyTextToClipBoard,
             chatTopicDao,
             settingsDataStore
         )

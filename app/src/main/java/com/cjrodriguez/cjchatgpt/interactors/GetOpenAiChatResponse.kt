@@ -10,12 +10,15 @@ import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
-import com.cjrodriguez.cjchatgpt.data.datasource.network.OpenApiConfig
+import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_PROMPT
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
+import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
+import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
+import com.cjrodriguez.cjchatgpt.presentation.util.tryCatch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -25,7 +28,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
-class GetChatResponse @Inject constructor(
+class GetOpenAiChatResponse @Inject constructor(
     private val context: Context,
     private val openApiConfig: OpenApiConfig,
     private val chatTopicDao: ChatTopicDao,
@@ -40,7 +43,6 @@ class GetChatResponse @Inject constructor(
         model: String
     ): Flow<DataState<String>> = flow {
 
-
         emit(DataState.loading())
         var errorMessage = ""
 
@@ -48,16 +50,22 @@ class GetChatResponse @Inject constructor(
 
             if (!isCurrentlyConnectedToInternet) {
                 errorMessage = context.getString(R.string.no_internet_available)
-                emit(DataState.data(data = if (isNewChat) {""} else topicId,
-                    message = GenericMessageInfo
-                        .Builder().id("GetChatResponse.Error")
-                        .title(context.getString(R.string.error))
-                        .description(errorMessage)
-                        .uiComponentType(UIComponentType.Dialog)))
+                emit(
+                    DataState.data(
+                        data = if (isNewChat) {
+                            ""
+                        } else topicId,
+                        message = GenericMessageInfo
+                            .Builder().id("GetChatResponse.Error")
+                            .title(context.getString(R.string.error))
+                            .description(errorMessage)
+                            .uiComponentType(UIComponentType.Dialog)
+                    )
+                )
                 return@flow
             }
-            val chatCompletionNew = getOpenAiResponseFlow(message, model)
-            val chatCompletionTopic =
+            val responseFlow = getOpenAiResponseFlow(message, model)
+            val topicFlow =
                 getOpenAiResponseFlow("$SUMMARIZE_PROMPT $message", model)
 
             val messageId = generateRandomId()
@@ -76,43 +84,28 @@ class GetChatResponse @Inject constructor(
             coroutineScope {
                 val job1 = async {
                     ensureActive()
-                    chatCompletionNew.collectLatest { chunk ->
+                    responseFlow.collectLatest { chunk ->
                         chunk.choices[0].delta?.content?.let {
-                            val affectedRows =
-                                chatTopicDao.appendTextToContentMessage(messageId, it)
-
-                            if (affectedRows == 0) {
-                                chatTopicDao.insertChatResponse(
-                                    ChatEntity(
-                                        messageId = messageId,
-                                        topicId = topicId,
-                                        expandedContent = it,
-                                        isUserGenerated = false,
-                                        lastCreatedIndex = lastCreatedIndex + 2
-                                    )
-                                )
-                            }
+                            storeAndAppendResponse(
+                                messageId,
+                                it,
+                                topicId,
+                                lastCreatedIndex,
+                                chatTopicDao
+                            )
                         }
-
                     }
                 }
                 if (isNewChat) {
                     val job2 = async {
                         ensureActive()
-                        chatCompletionTopic.collectLatest { chunk ->
+                        topicFlow.collectLatest { chunk ->
                             chunk.choices[0].delta?.content?.let {
-                                val affectedRows = chatTopicDao.appendTextToTopicTitle(
+                                storeAndAppendTopic(
                                     topicId,
-                                    it
+                                    it,
+                                    chatTopicDao
                                 )
-
-                                if (affectedRows == 0) {
-                                    chatTopicDao.insertTopic(
-                                        TopicEntity(
-                                            id = topicId, title = it
-                                        )
-                                    )
-                                }
                             }
                         }
                     }
@@ -134,7 +127,7 @@ class GetChatResponse @Inject constructor(
             emit(
                 DataState.error(
                     message = GenericMessageInfo
-                        .Builder().id("GetChatResponse.Error")
+                        .Builder().id("GetoOpenAiChatResponse.Error")
                         .title(context.getString(R.string.error))
                         .description(errorMessage)
                         .uiComponentType(UIComponentType.Dialog)
@@ -142,17 +135,6 @@ class GetChatResponse @Inject constructor(
             )
         }
 
-
-    }
-
-    private fun <T> tryCatch(input: T): String {
-        var errorMessage = ""
-        try {
-            input
-        } catch (ex: Exception) {
-            errorMessage = ex.message.toString()
-        }
-        return errorMessage
     }
 
     @OptIn(BetaOpenAI::class)

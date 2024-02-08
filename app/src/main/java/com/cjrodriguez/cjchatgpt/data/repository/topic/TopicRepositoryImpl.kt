@@ -6,9 +6,9 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
+import com.cjrodriguez.cjchatgpt.domain.model.Topic
 import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
 import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
-import com.cjrodriguez.cjchatgpt.domain.model.Topic
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.toTopic
 import kotlinx.coroutines.flow.Flow
@@ -19,7 +19,7 @@ class TopicRepositoryImpl @Inject constructor(
     private val dao: ChatTopicDao,
     private val deleteTopicAndChats: DeleteTopicAndChats,
     private val renameTopic: RenameTopic
-): TopicRepository {
+) : TopicRepository {
 
     override fun searchTopics(query: String): Flow<PagingData<Topic>> {
         return Pager(config = PagingConfig(

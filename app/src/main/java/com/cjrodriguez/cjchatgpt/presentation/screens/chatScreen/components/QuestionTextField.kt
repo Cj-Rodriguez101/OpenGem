@@ -43,7 +43,7 @@ fun QuestionTextField(
     errorMessage: String = "",
     isLoading: Boolean = false,
     sendMessage: () -> Unit = {},
-    cancelMessageGeneration: ()-> Unit = {},
+    cancelMessageGeneration: () -> Unit = {},
     updateMessage: (String) -> Unit = {}
 ) {
 
@@ -70,7 +70,7 @@ fun QuestionTextField(
                 .fillMaxWidth()
         )
 
-        if(!isLoading){
+        if (!isLoading) {
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
                 if (errorMessage.isNotEmpty()) Text(
                     text = errorMessage,
@@ -78,7 +78,8 @@ fun QuestionTextField(
                     color = MaterialTheme.colorScheme.error
                 )
                 ConstraintLayout(
-                    modifier = Modifier.imePadding()
+                    modifier = Modifier
+                        .imePadding()
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 ) {
@@ -96,7 +97,8 @@ fun QuestionTextField(
                     }
 
                     IconButton(onClick = sendMessage,
-                        enabled = errorMessage.isEmpty() && message.trim().isNotEmpty() && !isLoading,
+                        enabled = errorMessage.isEmpty() && message.trim()
+                            .isNotEmpty() && !isLoading,
                         modifier = Modifier
                             .size(24.dp)
                             .constrainAs(sendButton) {
@@ -109,10 +111,12 @@ fun QuestionTextField(
                         )
                     }
 
-                    Text(text = "$wordCount / $upperLimit", modifier = Modifier.constrainAs(noCount) {
-                        end.linkTo(sendButton.start, margin = 16.dp)
-                        top.linkTo(parent.top)
-                    })
+                    Text(
+                        text = "$wordCount / $upperLimit",
+                        modifier = Modifier.constrainAs(noCount) {
+                            end.linkTo(sendButton.start, margin = 16.dp)
+                            top.linkTo(parent.top)
+                        })
                 }
             }
         } else {
@@ -125,9 +129,11 @@ fun QuestionTextField(
                 CircularProgressIndicator()
 
                 IconButton(onClick = cancelMessageGeneration) {
-                    Icon(imageVector = Icons.Default.Stop, tint = MaterialTheme.colorScheme.primary,
+                    Icon(
+                        imageVector = Icons.Default.Stop, tint = MaterialTheme.colorScheme.primary,
                         contentDescription = "Stop Message Generation",
-                        modifier = Modifier.size(56.dp))
+                        modifier = Modifier.size(56.dp)
+                    )
                 }
             }
         }

@@ -27,6 +27,6 @@ data class DataState<T>(
             )
         }
 
-        fun <T>loading() = DataState<T>(isLoading = true)
+        fun <T> loading() = DataState<T>(isLoading = true)
     }
 }

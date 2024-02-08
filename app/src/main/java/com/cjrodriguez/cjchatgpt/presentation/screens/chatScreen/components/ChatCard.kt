@@ -146,7 +146,8 @@ fun HtmlTextView(html: String, modifier: Modifier = Modifier, textColor: Int) {
         modifier = modifier.then(
             Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)),
+                .padding(bottom = 8.dp)
+        ),
         factory = { context ->
             TextView(context).apply {
                 this.setTextColor(textColor)
@@ -181,45 +182,3 @@ fun CodeTextView(
         update = { it.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT) }
     )
 }
-
-//@Composable
-//fun MyWebView(html: String){
-//    AndroidView(factory = {
-//        WebView(it).apply {
-//
-////            loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
-////            layoutParams = ViewGroup.LayoutParams(
-////                ViewGroup.LayoutParams.MATCH_PARENT,
-////                ViewGroup.LayoutParams.MATCH_PARENT
-////            )
-//
-//            //settings.javaScriptEnabled = true
-//            //settings.loadWithOverviewMode = true
-//            //settings.useWideViewPort = true
-//            //settings.builtInZoomControls = true
-////            settings.displayZoomControls = false
-//            settings.defaultFontSize = 14
-//            //setInitialScale((density * 100).toInt())
-////            val contentHeight = this.contentHeight
-////            val webViewHeight = this.height
-////
-////            if (contentHeight > 0 && webViewHeight > 0) {
-////                val fontScale = webViewHeight.toFloat() / contentHeight
-////                settings.textZoom = (fontScale * 100).toInt()
-////            }
-////            this.webViewClient = object : WebViewClient() {
-////                override fun onPageFinished(view: WebView?, url: String?) {
-////                    super.onPageFinished(view, url)
-////                    val contentHeight = this@apply.contentHeight * this@apply.scale
-////                    val viewportHeight = this@apply.height - this@apply.paddingTop - this@apply.paddingBottom
-////                    val scale = viewportHeight / contentHeight
-////                    this@apply.settings.textZoom = (scale * 100).toInt()
-////                }
-////            }
-//            loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
-//        }
-//    }, modifier = Modifier//.padding(bottom = 8.dp)
-//        .background(color = androidx.compose.ui.graphics.Color.White, shape = CardDefaults.shape), update = {
-//        it.loadUrl(html)
-//    })
-//}

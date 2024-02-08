@@ -14,10 +14,10 @@ import kotlinx.coroutines.launch
  *
  */
 class SnackbarController
-(
+    (
     private val scope: CoroutineScope,
-    private val onRemoveHeadMessageFromQueue: ()-> Unit = {}
-){
+    private val onRemoveHeadMessageFromQueue: () -> Unit = {}
+) {
 
     private var snackbarJob: Job? = null
 
@@ -29,8 +29,8 @@ class SnackbarController
         snackBarHostState: SnackbarHostState,
         message: String,
         actionLabel: String? = null
-    ){
-        if(snackbarJob == null){
+    ) {
+        if (snackbarJob == null) {
             snackbarJob = scope.launch {
                 snackBarHostState.showSnackbar(
                     message = message,
@@ -39,8 +39,7 @@ class SnackbarController
                 onRemoveHeadMessageFromQueue()
                 cancelActiveJob()
             }
-        }
-        else{
+        } else {
             cancelActiveJob()
             snackbarJob = scope.launch {
                 snackBarHostState.showSnackbar(
@@ -53,7 +52,7 @@ class SnackbarController
         }
     }
 
-    private fun cancelActiveJob(){
+    private fun cancelActiveJob() {
         snackbarJob?.let { job ->
             job.cancel()
             snackbarJob = Job()

@@ -28,7 +28,8 @@ class DeleteTopicAndChats @Inject constructor(
 
         if (errorMessage.isEmpty()) {
             emit(
-                DataState.data( data = SUCCESS,
+                DataState.data(
+                    data = SUCCESS,
                     message = GenericMessageInfo
                         .Builder().id("DeleteTopicAndChats.Success")
                         .title(context.getString(R.string.success))

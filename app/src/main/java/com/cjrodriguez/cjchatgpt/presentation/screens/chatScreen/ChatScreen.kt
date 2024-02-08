@@ -64,11 +64,12 @@ import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AiTextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AnimateTypewriterText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ChatCard
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.QuestionTextField
-import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.TextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
+import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
 import kotlinx.collections.immutable.ImmutableSet
@@ -77,7 +78,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ChatScreen(
-    isGpt3: Boolean,
+    selectedAiType: AiType,
     isLoading: Boolean,
     allChats: LazyPagingItems<Chat>,
     messageSet: ImmutableSet<GenericMessageInfo>,
@@ -101,7 +102,7 @@ fun ChatScreen(
     val scrollState = rememberScrollState()
 
     LaunchedEffect(key1 = imeState.value) {
-        if (imeState.value){
+        if (imeState.value) {
             scrollState.animateScrollTo(scrollState.maxValue, tween(300))
         }
     }
@@ -239,12 +240,13 @@ fun ChatScreen(
                     ConstraintLayout(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(paddingValues).verticalScroll(scrollState)
+                            .padding(paddingValues)
+                            .verticalScroll(scrollState)
                     ) {
                         val (switch, chatSpace, textField, title) = createRefs()
 
-                        TextSwitch(selectedState = !isGpt3,
-                            changeSelectedItem = { onTriggerEvent(ChatListEvents.SetGptVersion) },
+                        AiTextSwitch(selectedAi = selectedAiType,
+                            changeSelectedItem = { onTriggerEvent(ChatListEvents.SetGptVersion(it)) },
                             modifier = Modifier.constrainAs(switch) {
                                 top.linkTo(parent.top)
                                 start.linkTo(parent.start)
@@ -282,7 +284,8 @@ fun ChatScreen(
                                 AnimateTypewriterText(
                                     baseText = "●",
                                     highlightText = "here",
-                                    parts = listOf(stringResource(R.string.wait),
+                                    parts = listOf(
+                                        stringResource(R.string.wait),
                                         stringResource(R.string.hold_up),
                                         stringResource(R.string.let_him_cook)
                                     )

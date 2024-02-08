@@ -5,7 +5,7 @@ import com.cjrodriguez.cjchatgpt.data.util.TOPIC_SCREEN
 
 sealed class Screen(
     val route: String
-){
-    object ChatScreen: Screen(CHAT_SCREEN)
-    object TopicScreen: Screen(TOPIC_SCREEN)
+) {
+    object ChatScreen : Screen(CHAT_SCREEN)
+    object TopicScreen : Screen(TOPIC_SCREEN)
 }

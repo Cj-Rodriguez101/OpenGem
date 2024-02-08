@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 //phillip lackner-> https://github.com/philipplackner/ObserveConnectivity
 class NetworkConnectivityObserver(
     context: Context
-): ConnectivityObserver {
+) : ConnectivityObserver {
 
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

@@ -32,11 +32,11 @@ import com.cjrodriguez.cjchatgpt.domain.model.Topic
 fun RenameDialog(
     topic: Topic = Topic("", ""),
     onDismiss: () -> Unit = {},
-    onTextChanged: (String)-> Unit = {},
+    onTextChanged: (String) -> Unit = {},
     onPositiveAction: () -> Unit = {}
 ) {
 
-    val currentText by remember{ mutableStateOf(topic.title) }
+    val currentText by remember { mutableStateOf(topic.title) }
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.background(
@@ -50,8 +50,10 @@ fun RenameDialog(
                 onValueChange = {
                     onTextChanged(it)
                 },
-                label = { Text(text = stringResource(R.string.new_name))},
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                label = { Text(text = stringResource(R.string.new_name)) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically, modifier = Modifier
@@ -63,7 +65,7 @@ fun RenameDialog(
                     Text(text = "Cancel", fontSize = 16.sp)
                 }
 
-                OutlinedButton( enabled = topic.title.isNotEmpty() && (topic.title != currentText),
+                OutlinedButton(enabled = topic.title.isNotEmpty() && (topic.title != currentText),
                     onClick = {
                         onPositiveAction()
                         onDismiss()

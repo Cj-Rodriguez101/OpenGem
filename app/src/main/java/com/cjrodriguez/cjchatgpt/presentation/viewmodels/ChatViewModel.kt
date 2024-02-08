@@ -8,7 +8,6 @@ import androidx.paging.cachedIn
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
-import com.cjrodriguez.cjchatgpt.data.util.GPT_3
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CopyTextToClipBoard
@@ -19,6 +18,8 @@ import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetTopicId
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
+import com.cjrodriguez.cjchatgpt.presentation.util.AiType
+import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -62,10 +63,8 @@ class ChatViewModel @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     val topicTitle: Flow<String?> =
         _selectedTopicId.flatMapLatest {
-
             chatRepository.getSelectedTopicName(it)
         }
-
 
     private val _errorMessage: MutableStateFlow<UiText> = MutableStateFlow(UiText.DynamicString(""))
     val errorMessage: StateFlow<UiText> = _errorMessage
@@ -76,8 +75,8 @@ class ChatViewModel @Inject constructor(
     private val _wordCount: MutableStateFlow<Int> = MutableStateFlow(0)
     val wordCount: StateFlow<Int> = _wordCount
 
-    private val _isGpt3: MutableStateFlow<Boolean> = MutableStateFlow(true)
-    val isGpt3: StateFlow<Boolean> = _isGpt3
+    private val _aiType: MutableStateFlow<AiType> = MutableStateFlow(GPT3)
+    val aiType: StateFlow<AiType> = _aiType
 
     private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -88,13 +87,13 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             launch {
                 chatRepository.getGptVersion().collectLatest { gptVersion ->
-                    _isGpt3.value = gptVersion == GPT_3
+                    _aiType.value = AiType.valueOf(gptVersion)
                 }
             }
 
             launch {
-                _shouldContinueChatGeneration.collectLatest {shouldCancel->
-                    if(!shouldCancel){
+                _shouldContinueChatGeneration.collectLatest { shouldCancel ->
+                    if (!shouldCancel) {
                         _cancellableCoroutineScope.value?.let {
                             it.cancel()
                             it.cancelChildren()
@@ -110,7 +109,7 @@ class ChatViewModel @Inject constructor(
     fun onTriggerEvent(events: ChatListEvents) {
         when (events) {
 
-            is ChatListEvents.CancelChatGeneration->{
+            is ChatListEvents.CancelChatGeneration -> {
                 _shouldContinueChatGeneration.value = false
             }
 
@@ -135,7 +134,8 @@ class ChatViewModel @Inject constructor(
             }
 
             is SetGptVersion -> {
-                setGptVersion()
+                _selectedTopicId.value = ""
+                setGptVersion(events.aiType)
             }
 
             is ChatListEvents.RemoveHeadMessage -> {
@@ -163,16 +163,16 @@ class ChatViewModel @Inject constructor(
         displayErrorMessage(textLength)
     }
 
-    private fun setGptVersion() {
+    private fun setGptVersion(aiType: AiType) {
 
-        if (!isGpt3.value) {
+        if (aiType == GPT3) {
             _upperLimit.value = 500
         } else {
             _upperLimit.value = 10000
         }
         displayErrorMessage(message.value.length)
-        chatRepository.setGptVersion(!_isGpt3.value)
-        _isGpt3.value = !_isGpt3.value
+        chatRepository.setGptVersion(aiType)
+        _aiType.value = aiType
     }
 
     private fun displayErrorMessage(textLength: Int) {
@@ -193,22 +193,32 @@ class ChatViewModel @Inject constructor(
 
         _cancellableCoroutineScope.value = viewModelScope.launch {
             withContext(coroutineDispatcher) {
-                chatRepository.getAndStoreChatResponse(
-                    message = _message.value.trim(), isNewChat = isNewChat,
-                    isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
-                    topicId = _selectedTopicId.value, model = chatRepository.getGptVersion().first()
-                ).cancellable().collectLatest { dataState ->
+                val messageToSend = message.value.trim()
+                val topicIdToSend = _selectedTopicId.value
 
+                val responseFlow = when (aiType.value) {
+                    AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
+                        message = messageToSend,
+                        isNewChat = isNewChat,
+                        isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
+                        topicId = topicIdToSend
+                    )
+                    else -> chatRepository.getAndStoreOpenAiChatResponse(
+                        message = messageToSend,
+                        isNewChat = isNewChat,
+                        isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
+                        topicId = topicIdToSend,
+                        model = _aiType.value.modelName
+                    )
+                }
+
+                responseFlow.cancellable().collectLatest { dataState ->
                     _isLoading.value = dataState.isLoading
 
                     _message.value = ""
                     _wordCount.value = 0
 
-                    dataState.data.let { data ->
-
-                        data?.let { _selectedTopicId.value = it }
-
-                    }
+                    dataState.data?.let { _selectedTopicId.value = it }
 
                     dataState.message?.let {
                         appendToMessageQueue(it)

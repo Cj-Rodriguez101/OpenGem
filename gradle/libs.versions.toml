@@ -1,5 +1,5 @@
 [versions]
-agp = "8.2.0-alpha16"
+agp = "8.2.2"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -25,8 +25,10 @@ paging-runtime = "3.2.0"
 navigation = "2.7.0"
 foundation = "1.6.0-alpha01" #alpha 03 has issues
 immutable = "0.3.5"
+gemini = "0.1.2"
 
 [libraries]
+gemini = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "gemini"}
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }

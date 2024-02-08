@@ -1,7 +1,7 @@
 package com.cjrodriguez.cjchatgpt.presentation.util
 
 class GenericMessageInfo
-private constructor(builder: Builder){
+private constructor(builder: Builder) {
 
     // required
     val id: String
@@ -16,13 +16,13 @@ private constructor(builder: Builder){
     val negativeAction: NegativeAction?
 
     init {
-        if(builder.id == null){
+        if (builder.id == null) {
             throw Exception("GenericDialog id cannot be null.")
         }
-        if(builder.title == null){
+        if (builder.title == null) {
             throw Exception("GenericDialog title cannot be null.")
         }
-        if(builder.uiComponentType == null){
+        if (builder.uiComponentType == null) {
             throw Exception("GenericDialog uiComponentType cannot be null.")
         }
         this.id = builder.id!!
@@ -43,7 +43,7 @@ private constructor(builder: Builder){
         var title: String? = null
             private set
 
-        var onDismiss: () -> Unit = {  }
+        var onDismiss: () -> Unit = { }
             private set
 
         var uiComponentType: UIComponentType? = UIComponentType.None
@@ -73,7 +73,7 @@ private constructor(builder: Builder){
 
         fun uiComponentType(
             uiComponentType: UIComponentType
-        ) : Builder {
+        ): Builder {
             this.uiComponentType = uiComponentType
             return this
         }
@@ -94,14 +94,14 @@ private constructor(builder: Builder){
 
         fun positive(
             positiveAction: PositiveAction?,
-        ) : Builder {
+        ): Builder {
             this.positiveAction = positiveAction
             return this
         }
 
         fun negative(
             negativeAction: NegativeAction
-        ) : Builder {
+        ): Builder {
             this.negativeAction = negativeAction
             return this
         }

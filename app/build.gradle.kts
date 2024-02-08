@@ -18,7 +18,8 @@ android {
         val properties = Properties()
         properties.load(project.rootProject.file("local.properties").inputStream())
 
-        buildConfigField(type = "String", name = "API_KEY", value = "\"${properties.getProperty("API_KEY")}\"")
+        buildConfigField(type = "String", name = "OPEN_AI_API_KEY", value = "\"${properties.getProperty("OPEN_AI_API_KEY")}\"")
+        buildConfigField(type = "String", name = "GEMINI_AI_API_KEY", value = "\"${properties.getProperty("GEMINI_AI_API_KEY")}\"")
         applicationId = "com.cjrodriguez.cjchatgpt"
         minSdk = 24
         targetSdk = 34
@@ -108,6 +109,9 @@ dependencies {
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.compose)
     implementation(libs.dagger.hilt)
+
+    //gemini
+    implementation(libs.gemini)
 
 //    implementation(libs.html.text)
 

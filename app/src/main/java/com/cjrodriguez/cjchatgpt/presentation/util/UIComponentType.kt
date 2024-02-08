@@ -1,10 +1,10 @@
 package com.cjrodriguez.cjchatgpt.presentation.util
 
-sealed class UIComponentType{
+sealed class UIComponentType {
 
-    object Dialog: UIComponentType()
+    object Dialog : UIComponentType()
 
-    object SnackBar: UIComponentType()
+    object SnackBar : UIComponentType()
 
-    object None: UIComponentType()
+    object None : UIComponentType()
 }
