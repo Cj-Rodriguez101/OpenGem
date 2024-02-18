@@ -2,11 +2,13 @@
 ChatGpt App Using OpenAI api
 
 ## Features
-* Ask GPT 3.5 (Not tested Gpt4 Since Free Plan) any questions
+* Ask GPT 3.5, 4 and GEMINI any questions
 * Generate History Based On Summary
 * Copy Any Chat
 * Search And Filter History
 * Rename And Delete History
+* Chat (WIP)
+* Whisper (WIP)
 
 ## Architecture - MVVM
 ## Tools
@@ -16,6 +18,7 @@ ChatGpt App Using OpenAI api
 * Kotlin DSL
 * Datastore
 * Hilt
+* MediaRecorder
 
 ## To Build
 * Add your key to the local.properties file
@@ -27,6 +30,12 @@ ChatGpt App Using OpenAI api
 * Design Inspirations From ChatGpt App and Ask AI App
 * TypeWriter Text By [Radhika canopas](https://github.com/cp-radhika-s/TypeWriter_Jetpackcompose/tree/main)
 * Observe Internet Connectivty By [Philipp Lackner](https://github.com/philipplackner/ObserveConnectivity/blob/master/app/src/main/java/com/plcoding/observeconnectivity/)
+
+
+  
+
+https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/a7fbbba5-972c-4ef0-94a8-b2c4d53633bd
+
 
 
 <p align="center"
