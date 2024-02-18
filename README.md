@@ -17,6 +17,12 @@ ChatGpt App Using OpenAI api
 * Datastore
 * Hilt
 
+## To Build
+* Add your key to the local.properties file
+* `OPEN_AI_API_KEY=your api key`
+* `GEMINI_AI_API_KEY=your api key`
+* Update AGP if necessary
+
 ## Credits
 * Design Inspirations From ChatGpt App and Ask AI App
 * TypeWriter Text By [Radhika canopas](https://github.com/cp-radhika-s/TypeWriter_Jetpackcompose/tree/main)
