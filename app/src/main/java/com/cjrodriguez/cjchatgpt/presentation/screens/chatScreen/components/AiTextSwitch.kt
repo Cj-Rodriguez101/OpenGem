@@ -22,9 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
-import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GEMINI
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
-import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT4
 
 @Preview
 @Composable
@@ -51,6 +49,7 @@ fun AiTextSwitch(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
+                    .width(300.dp)
                     .clickable(onClick = { changeSelectedItem(currentAiType) })
                     .background(
                         color = if (selectedAi == currentAiType) MaterialTheme.colorScheme.primary else Color.Transparent,

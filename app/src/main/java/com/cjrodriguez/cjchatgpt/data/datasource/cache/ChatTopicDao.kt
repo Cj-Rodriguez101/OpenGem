@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.SummaryEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -19,8 +20,14 @@ interface ChatTopicDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertTopic(topicEntity: TopicEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertSummaryResponse(summaryEntity: SummaryEntity)
+
     @Query("DELETE FROM chatTable WHERE topicId =:topicId")
     fun deleteAllMessagesWithTopic(topicId: String)
+
+    @Query("DELETE FROM summaryTable WHERE topicId =:topicId")
+    fun deleteSummaryMessageWithTopic(topicId: String)
 
     @Query("DELETE FROM topicTable WHERE id =:id")
     fun deleteTopicId(id: String)
@@ -29,6 +36,7 @@ interface ChatTopicDao {
     fun deleteTopicAndMessagesWithTopicId(topicId: String) {
         deleteTopicId(topicId)
         deleteAllMessagesWithTopic(topicId)
+        deleteSummaryMessageWithTopic(topicId)
     }
 
     @Query(
@@ -40,8 +48,24 @@ interface ChatTopicDao {
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
     fun appendTextToTopicTitle(topicId: String, textToAppend: String): Int
 
+    @Query("UPDATE summaryTable SET content = content || :textToAppend WHERE topicId = :topicId")
+    fun appendTextToSummary(topicId: String, textToAppend: String): Int
+
+//    @Query("UPDATE summaryTable SET content = CAST(CAST(content AS TEXT) || :textToAppend AS BLOB) WHERE topicId = :topicId")
+//    fun appendTextToSummary(topicId: String, textToAppend: String): Int
+
+
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex DESC")
     fun getAllChatsFromTopic(topicId: String): PagingSource<Int, ChatEntity>
+
+//    @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex")
+//    fun getAllChatsFromTopicNoPaging(topicId: String): List<ChatEntity>
+
+    @Query("SELECT * FROM chatTable WHERE topicId = :topicId AND lastCreatedIndex >= :startIndex ORDER BY lastCreatedIndex ASC")
+    fun getAllChatsFromTopicStartingAfterIndex(
+        topicId: String,
+        startIndex: Int = 0
+    ): List<ChatEntity>
 
     @Query(
         "SELECT * FROM topicTable WHERE title LIKE '%' || :query || '%'" +
@@ -52,8 +76,14 @@ interface ChatTopicDao {
     @Query("SELECT * FROM topicTable LIMIT 1")
     fun getFirstTopic(): Flow<TopicEntity>
 
+    @Query("SELECT * FROM summaryTable WHERE topicId = :topicId LIMIT 1")
+    fun getSummaryItemBasedOnTopic(topicId: String): SummaryEntity?
+
     @Query("SELECT MAX(lastCreatedIndex) FROM chatTable")
     fun getMaxTimeCreatedAt(): Int?
+
+    @Query("SELECT MAX(lastCreatedIndex) FROM chatTable WHERE topicId = :topicId")
+    fun getMaxTimeCreatedAtWithTopic(topicId: String): Int?
 
     @Query("SELECT title FROM topicTable WHERE id =:id LIMIT 1")
     fun getSpecificTopic(id: String): Flow<String?>

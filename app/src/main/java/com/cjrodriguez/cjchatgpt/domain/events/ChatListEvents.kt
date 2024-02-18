@@ -9,10 +9,18 @@ sealed class ChatListEvents {
     data class SendMessage(val isCurrentlyConnectedToInternet: ConnectivityObserver.Status) :
         ChatListEvents()
 
+    data class SetRecordingState(val isRecordingState: Boolean) : ChatListEvents()
+
+    data class SetShouldShowVoiceSegment(val shouldShowVoiceSegment: Boolean) : ChatListEvents()
+
     object NewChat : ChatListEvents()
     data class CopyTextToClipBoard(val messageToCopy: String) : ChatListEvents()
     object CancelChatGeneration : ChatListEvents()
     object RemoveHeadMessage : ChatListEvents()
+    object StartRecording : ChatListEvents()
+
+    object UpdatePowerLevel : ChatListEvents()
+    object StopRecording : ChatListEvents()
     data class SetMessage(val message: String) : ChatListEvents()
     data class SetTopicId(val topicId: String) : ChatListEvents()
 }

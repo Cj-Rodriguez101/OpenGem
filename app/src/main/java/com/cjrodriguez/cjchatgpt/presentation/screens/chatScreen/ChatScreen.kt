@@ -1,6 +1,13 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 
+import android.Manifest.permission
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
@@ -39,8 +45,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -49,17 +60,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.core.content.ContextCompat
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import com.cjrodriguez.cjchatgpt.R
+import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
-import com.cjrodriguez.cjchatgpt.data.util.revertCodeOrPlainHtmlBackToHtml
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
@@ -68,10 +80,13 @@ import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AiTe
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AnimateTypewriterText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ChatCard
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.QuestionTextField
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.VoiceRecordingSegment
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
 
@@ -85,21 +100,49 @@ fun ChatScreen(
     status: ConnectivityObserver.Status,
     message: String,
     topicTitle: String,
+    recordingState: RecordingState,
+    shouldShowRecordingScreen: Boolean,
     topicId: String,
     wordCount: Int,
     upperLimit: Int,
+    circlePowerLevel: Float,
     errorMessage: UiText,
     navigateToHistoryScreen: (String) -> Unit,
     onTriggerEvent: (ChatListEvents) -> Unit
 ) {
-
     val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+    val shouldEnableTextField by remember {
+        derivedStateOf { !shouldShowRecordingScreen }
+    }
 
     val imeState = rememberImeState()
     val scrollState = rememberScrollState()
+
+    val context = LocalContext.current
+    var hasAlreadyCheckedForPermission by rememberSaveable { mutableStateOf(false) }
+    val permissionCheckResult = ContextCompat.checkSelfPermission(context, permission.RECORD_AUDIO)
+    val recordAudioLauncher = rememberLauncherForActivityResult(
+        contract = RequestPermission(),
+        onResult = { isGranted ->
+            //start listening
+//            onTriggerEvent(
+//                ChatListEvents.PermissionResult(
+//                    isGranted = isGranted,
+//                    isPermanentlyDeclined  = !isGranted && !(context as ComponentActivity)
+//                        .shouldShowRequestPermissionRationale(permission.RECORD_AUDIO)
+//                )
+//            )
+
+            onTriggerEvent(ChatListEvents.StartRecording)
+            hasAlreadyCheckedForPermission = true
+        })
+
+//    LaunchedEffect(recordAudioLauncher){
+//        recordAudioLauncher.launch(Manifest.permission.RECORD_AUDIO)
+//    }
 
     LaunchedEffect(key1 = imeState.value) {
         if (imeState.value) {
@@ -241,9 +284,9 @@ fun ChatScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
-                            .verticalScroll(scrollState)
+                        //.verticalScroll(scrollState)
                     ) {
-                        val (switch, chatSpace, textField, title) = createRefs()
+                        val (switch, chatSpace, textField, title, voiceRecord) = createRefs()
 
                         AiTextSwitch(selectedAi = selectedAiType,
                             changeSelectedItem = { onTriggerEvent(ChatListEvents.SetGptVersion(it)) },
@@ -252,10 +295,14 @@ fun ChatScreen(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             })
-
-                        Text(text = topicTitle,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center,
+                        MarkdownText(
+                            markdown = topicTitle,
+                            maxLines = 1,
+                            truncateOnTextOverflow = true,
+                            style = TextStyle(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 16.sp
+                            ),
                             modifier = Modifier
                                 .height(if (topicTitle.isEmpty()) 0.dp else 20.dp)
                                 .constrainAs(title) {
@@ -263,10 +310,7 @@ fun ChatScreen(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                 }
-                                .padding(start = 16.dp, end = 16.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                                .padding(start = 16.dp, end = 16.dp))
 
                         if (allChats.itemCount == 0) {
                             Column(
@@ -317,8 +361,9 @@ fun ChatScreen(
                                             onCopyClick = {
                                                 onTriggerEvent(
                                                     ChatListEvents.CopyTextToClipBoard(
-                                                        it.content.revertCodeOrPlainHtmlBackToHtml()
-                                                            .revertHtmlToPlainText()
+                                                        it.content.revertHtmlToPlainText()
+                                                        //.revertCodeOrPlainHtmlBackToHtml()
+                                                        //.revertHtmlToPlainText()
                                                     )
                                                 )
                                             })
@@ -330,12 +375,14 @@ fun ChatScreen(
                             }
                         }
 
-                        QuestionTextField(message = message,
+                        QuestionTextField(
+                            message = message,
                             wordCount = wordCount,
                             upperLimit = upperLimit,
                             errorMessage = errorMessage.asString(),
                             isLoading = isLoading,
                             updateMessage = { onTriggerEvent(ChatListEvents.SetMessage(it)) },
+                            shouldEnableTextField = shouldEnableTextField,
                             sendMessage = {
                                 onTriggerEvent(ChatListEvents.SendMessage(status))
                                 keyboardController?.hide()
@@ -343,13 +390,63 @@ fun ChatScreen(
                             cancelMessageGeneration = {
                                 onTriggerEvent(ChatListEvents.CancelChatGeneration)
                             },
+                            openVoiceRecordingSegment = {
+                                if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                                    //start listening
+                                    onTriggerEvent(ChatListEvents.StartRecording)
+                                } else if (!hasAlreadyCheckedForPermission) {
+                                    recordAudioLauncher.launch(permission.RECORD_AUDIO)
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(string.you_need_audio_permission),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                onTriggerEvent(ChatListEvents.SetShouldShowVoiceSegment(true))
+                            },
                             modifier = Modifier
                                 .constrainAs(textField) {
-                                    bottom.linkTo(parent.bottom)
+                                    bottom.linkTo(if (shouldShowRecordingScreen) voiceRecord.top else parent.bottom)
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                 }
                         )
+
+                        AnimatedVisibility(
+                            visible = shouldShowRecordingScreen,
+                            exit = slideOutVertically(
+                                targetOffsetY = { fullHeight -> fullHeight },
+                                animationSpec = tween(durationMillis = 300)
+                            ),
+                            modifier = Modifier.constrainAs(voiceRecord) {
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }) {
+                            VoiceRecordingSegment(
+                                recordingState = recordingState,
+                                circlePowerLevel = circlePowerLevel,
+                                minimizePopUp = {
+                                    onTriggerEvent(
+                                        ChatListEvents
+                                            .SetShouldShowVoiceSegment(false)
+                                    )
+                                },
+                                setRecordingState = {
+                                    onTriggerEvent(
+                                        ChatListEvents.SetRecordingState(
+                                            it
+                                        )
+                                    )
+                                },
+                                stopListening = { onTriggerEvent(ChatListEvents.StopRecording) },
+                                updatePowerLevel = { onTriggerEvent(ChatListEvents.UpdatePowerLevel) },
+                                retryTranscription = {
+                                    onTriggerEvent(ChatListEvents.StartRecording)
+                                }
+                            )
+                        }
                     }
                 }
             }

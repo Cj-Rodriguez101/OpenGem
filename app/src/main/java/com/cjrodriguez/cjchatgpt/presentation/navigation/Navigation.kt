@@ -47,6 +47,9 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val errorMessage by chatViewModel.errorMessage.collectAsStateWithLifecycle()
             val isLoading by chatViewModel.isLoading.collectAsStateWithLifecycle()
             val messageSet by chatViewModel.messageSet.collectAsStateWithLifecycle()
+            val shouldShowVoiceSegment by chatViewModel.shouldShowRecordingScreen.collectAsStateWithLifecycle()
+            val recordingState by chatViewModel.recordingState.collectAsStateWithLifecycle()
+            val powerLevel by chatViewModel.powerLevel.collectAsStateWithLifecycle()
             val allChats = chatViewModel.chatPagingFlow.collectAsLazyPagingItems()
             ChatScreen(
                 selectedAiType = selectedAi,
@@ -59,6 +62,9 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 isLoading = isLoading,
                 messageSet = messageSet.toImmutableSet(),
                 topicTitle = topicTitle ?: "",
+                recordingState = recordingState,
+                shouldShowRecordingScreen = shouldShowVoiceSegment,
+                circlePowerLevel = powerLevel,
                 topicId = topicId,
                 navigateToHistoryScreen =
                 {

@@ -1,7 +1,7 @@
 package com.cjrodriguez.cjchatgpt.interactors
 
 import android.content.Context
-import com.aallam.openai.api.BetaOpenAI
+import android.util.Log
 import com.aallam.openai.api.chat.ChatCompletionRequest
 import com.aallam.openai.api.chat.ChatMessage
 import com.aallam.openai.api.chat.ChatRole
@@ -9,12 +9,19 @@ import com.aallam.openai.api.model.ModelId
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
-import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.SummaryEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.getChatRole
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
+import com.cjrodriguez.cjchatgpt.data.util.CHAT_HISTORY_REFER_PROMPT
+import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_HISTORY_PROMPT
 import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_PROMPT
+import com.cjrodriguez.cjchatgpt.data.util.THE_REAL_PROMPT_IS
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
+import com.cjrodriguez.cjchatgpt.data.util.getNewSummaryResponseFromModel
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
+import com.cjrodriguez.cjchatgpt.data.util.toByteArrayCustom
+import com.cjrodriguez.cjchatgpt.data.util.toCustomString
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
@@ -33,8 +40,6 @@ class GetOpenAiChatResponse @Inject constructor(
     private val openApiConfig: OpenApiConfig,
     private val chatTopicDao: ChatTopicDao,
 ) {
-
-    @OptIn(BetaOpenAI::class)
     fun execute(
         message: String,
         isNewChat: Boolean,
@@ -64,43 +69,58 @@ class GetOpenAiChatResponse @Inject constructor(
                 )
                 return@flow
             }
-            val responseFlow = getOpenAiResponseFlow(message, model)
-            val topicFlow =
-                getOpenAiResponseFlow("$SUMMARIZE_PROMPT $message", model)
+            val responseFlow = if (isNewChat) {
+                getOpenAiResponseFlow(message, model)
+            } else {
+                //get summary text
+                val summaryEntity = chatTopicDao.getSummaryItemBasedOnTopic(topicId)
+                if (summaryEntity != null) {
+                    getOpenAiResponseFlow(
+                        "$CHAT_HISTORY_REFER_PROMPT \"${summaryEntity.content}\" " +
+                                "$THE_REAL_PROMPT_IS  \"$message\"",
+                        model
+                    )
+                } else {
+                    getOpenAiResponseFlow(message, model)
+                }
+            }
 
             val messageId = generateRandomId()
-
-            val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAt() ?: 0
+            val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
 
             chatTopicDao.insertChatResponse(
                 ChatEntity(
                     messageId = generateRandomId(),
                     topicId = topicId,
                     expandedContent = message,
+                    modelId = model,
                     lastCreatedIndex = lastCreatedIndex + 1
                 )
             )
 
             coroutineScope {
-                val job1 = async {
+                val messageJob = async {
                     ensureActive()
                     responseFlow.collectLatest { chunk ->
-                        chunk.choices[0].delta?.content?.let {
+                        chunk.choices[0].delta.content?.let {
                             storeAndAppendResponse(
                                 messageId,
                                 it,
                                 topicId,
                                 lastCreatedIndex,
+                                model,
                                 chatTopicDao
                             )
                         }
                     }
                 }
                 if (isNewChat) {
-                    val job2 = async {
+                    val topicFlow =
+                        getOpenAiResponseFlow("$SUMMARIZE_PROMPT $message", "gpt-3.5-turbo")
+                    val topicJob = async {
                         ensureActive()
                         topicFlow.collectLatest { chunk ->
-                            chunk.choices[0].delta?.content?.let {
+                            chunk.choices[0].delta.content?.let {
                                 storeAndAppendTopic(
                                     topicId,
                                     it,
@@ -110,10 +130,33 @@ class GetOpenAiChatResponse @Inject constructor(
                         }
                     }
 
-                    errorMessage = tryCatch(awaitAll(job1, job2))
-
+                    errorMessage = tryCatch(awaitAll(messageJob, topicJob))
+                    val summary = getNewSummaryResponseFromModel(
+                        topicId,
+                        0,
+                        chatTopicDao
+                    ) { getSummarizedOpenAiResponseFlow(it) }
+                    summary.choices[0].message.content.let {
+                        Log.e("openai", "new $it")
+                        chatTopicDao.insertSummaryResponse(
+                            SummaryEntity(
+                                topicId = topicId,
+                                content = it.toString()
+                            )
+                        )
+                    }
                 } else {
-                    errorMessage = tryCatch(job1.await())
+                    errorMessage = tryCatch(messageJob.await())
+                    val lastCreatedId = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
+                    val summary = getNewSummaryResponseFromModel(
+                        topicId,
+                        lastCreatedId,
+                        chatTopicDao
+                    ) { getSummarizedOpenAiResponseFlow(it) }
+                    summary.choices[0].message.content.let {
+                        Log.e("openai", "not new $it")
+                        chatTopicDao.appendTextToSummary(topicId, it.toString())
+                    }
                 }
             }
 
@@ -127,17 +170,15 @@ class GetOpenAiChatResponse @Inject constructor(
             emit(
                 DataState.error(
                     message = GenericMessageInfo
-                        .Builder().id("GetoOpenAiChatResponse.Error")
+                        .Builder().id("GetOpenAiChatResponse.Error")
                         .title(context.getString(R.string.error))
                         .description(errorMessage)
                         .uiComponentType(UIComponentType.Dialog)
                 )
             )
         }
-
     }
 
-    @OptIn(BetaOpenAI::class)
     private fun getOpenAiResponseFlow(
         message: String,
         model: String
@@ -147,4 +188,30 @@ class GetOpenAiChatResponse @Inject constructor(
             model = ModelId(model)
         )
     )
+
+    private suspend fun getSummarizedOpenAiResponseFlow(
+        messages: List<ChatEntity>,
+    ) = openApiConfig.openai.chatCompletion(
+        ChatCompletionRequest(
+            messages = messages.mapIndexed { index, chatEntity ->
+                if (index == 0) {
+                    ChatMessage(
+                        role = chatEntity.openAiChatRole.getChatRole(),
+                        SUMMARIZE_HISTORY_PROMPT + chatEntity.expandedContent
+                    )
+                } else {
+                    ChatMessage(
+                        role = chatEntity.openAiChatRole.getChatRole(),
+                        chatEntity.expandedContent
+                    )
+                }
+            },
+            model = ModelId("gpt-3.5-turbo")
+        )
+    )
+
+//    private suspend fun getContent(): List<ImageURL>{
+//        return openApiConfig.openai.imageURL(
+//            ImageCreation(prompt = "", model = ModelId(""), n=2, size = ImageSize.is1024x1024))
+//    }
 }

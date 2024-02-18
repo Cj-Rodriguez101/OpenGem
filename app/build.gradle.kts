@@ -67,7 +67,8 @@ kapt {
 }
 
 dependencies {
-
+    implementation(libs.compose.markdown)
+    //implementation(libs.rich.text)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
@@ -86,7 +87,7 @@ dependencies {
     implementation(libs.immutable)
 
     //open ai & ktor
-    implementation(platform(libs.client.bom))
+//    implementation(platform(libs.client.bom))
     implementation(libs.ai.client)
     runtimeOnly(libs.ktor)
     testImplementation(libs.junit)

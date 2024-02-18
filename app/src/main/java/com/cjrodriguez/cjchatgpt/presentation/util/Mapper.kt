@@ -2,17 +2,17 @@ package com.cjrodriguez.cjchatgpt.presentation.util
 
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
-import com.cjrodriguez.cjchatgpt.data.util.dividePlainHtmlAndCode
-import com.cjrodriguez.cjchatgpt.data.util.transformTextToHtml
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.domain.model.Topic
+import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
 
 fun ChatEntity.toChat(): Chat {
     return Chat(
         messageId = this.messageId,
         topicId = this.topicId,
-        content = this.expandedContent.transformTextToHtml().dividePlainHtmlAndCode(),
+        content = this.expandedContent,//.transformTextToHtml().dividePlainHtmlAndCode(),
         isUserGenerated = this.isUserGenerated,
+        aiType = AiType.fromModelName(this.modelId) ?: GPT3,
         lastCreatedIndex = this.lastCreatedIndex
     )
 }

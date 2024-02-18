@@ -15,12 +15,22 @@ import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.NewChat
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SendMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetGptVersion
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetMessage
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetRecordingState
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetShouldShowVoiceSegment
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetTopicId
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StartRecording
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.UpdatePowerLevel
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.ERROR
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.FINISHED
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.PROCESSING
+import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.RECORDING
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,11 +38,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -44,15 +56,27 @@ class ChatViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _message: MutableStateFlow<String> = MutableStateFlow("")
-    val message: StateFlow<String> = _message
+    val message = _message.asStateFlow()
 
     private val _shouldContinueChatGeneration: MutableStateFlow<Boolean> = MutableStateFlow(true)
 
     private val _messageSet: MutableStateFlow<Set<GenericMessageInfo>> = MutableStateFlow(setOf())
-    val messageSet: StateFlow<Set<GenericMessageInfo>> = _messageSet
+    val messageSet = _messageSet.asStateFlow()
+
+    private val _shouldShowRecordingScreen: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val shouldShowRecordingScreen = _shouldShowRecordingScreen.asStateFlow()
 
     private val _selectedTopicId: MutableStateFlow<String> = MutableStateFlow("")
-    val selectedTopicId: StateFlow<String> = _selectedTopicId
+    val selectedTopicId = _selectedTopicId.asStateFlow()
+
+    val powerLevel = chatRepository.getPowerLevelWithListening().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = 0f
+    )
+
+    private val _recordingState: MutableStateFlow<RecordingState> = MutableStateFlow(RECORDING)
+    val recordingState = _recordingState.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val chatPagingFlow: Flow<PagingData<Chat>> =
@@ -67,30 +91,30 @@ class ChatViewModel @Inject constructor(
         }
 
     private val _errorMessage: MutableStateFlow<UiText> = MutableStateFlow(UiText.DynamicString(""))
-    val errorMessage: StateFlow<UiText> = _errorMessage
-
-    private val _upperLimit: MutableStateFlow<Int> = MutableStateFlow(500)
-    val upperLimit: StateFlow<Int> = _upperLimit
+    val errorMessage = _errorMessage.asStateFlow()
 
     private val _wordCount: MutableStateFlow<Int> = MutableStateFlow(0)
-    val wordCount: StateFlow<Int> = _wordCount
+    val wordCount = _wordCount.asStateFlow()
 
-    private val _aiType: MutableStateFlow<AiType> = MutableStateFlow(GPT3)
-    val aiType: StateFlow<AiType> = _aiType
+    val aiType = chatRepository.getGptVersion().map { AiType.valueOf(it) }.stateIn(
+        scope = viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = GPT3
+    )
+
+    val upperLimit = aiType.map {
+        if (it == GPT3) 500 else 10000
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = 500
+    )
 
     private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading
+    val isLoading = _isLoading.asStateFlow()
 
     private val _cancellableCoroutineScope: MutableStateFlow<Job?> = MutableStateFlow(null)
 
     init {
         viewModelScope.launch {
-            launch {
-                chatRepository.getGptVersion().collectLatest { gptVersion ->
-                    _aiType.value = AiType.valueOf(gptVersion)
-                }
-            }
-
             launch {
                 _shouldContinueChatGeneration.collectLatest { shouldCancel ->
                     if (!shouldCancel) {
@@ -134,12 +158,80 @@ class ChatViewModel @Inject constructor(
             }
 
             is SetGptVersion -> {
-                _selectedTopicId.value = ""
+                // _selectedTopicId.value = ""
                 setGptVersion(events.aiType)
+            }
+
+            is SetShouldShowVoiceSegment -> {
+                _shouldShowRecordingScreen.value = events.shouldShowVoiceSegment
             }
 
             is ChatListEvents.RemoveHeadMessage -> {
                 removeHeadMessageFromQueue()
+            }
+
+            is StartRecording -> {
+                chatRepository.startRecording()
+                _recordingState.value = RECORDING
+            }
+
+            is SetRecordingState -> {
+                chatRepository.setRecordingState(events.isRecordingState)
+            }
+
+            is StopRecording -> {
+                chatRepository.stopRecording()
+                _recordingState.value = PROCESSING
+                getTextToSpeech()
+            }
+
+            is UpdatePowerLevel -> {
+                viewModelScope.launch {
+                    chatRepository.updatePowerLevel()
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+//    private fun stopRecording() {
+//        viewModelScope.launch {
+//            try {
+//                chatRepository.stopRecording()
+//                _recordingState.value = PROCESSING
+//                getTextToSpeech()
+//            } catch (ex: Exception) {
+//                appendToMessageQueue(
+//                    Builder().title("error")
+//                        .description(ex.message.toString())
+//                )
+//            }
+//        }
+//    }
+
+    private fun getTextToSpeech() {
+        viewModelScope.launch {
+            withContext(coroutineDispatcher) {
+                chatRepository.getTextFromSpeech().collectLatest { dataState ->
+                    _isLoading.value = dataState.isLoading
+                    _recordingState.value = PROCESSING
+
+                    _message.value = ""
+                    _wordCount.value = 0
+
+                    dataState.data?.let {
+                        _message.value = it
+                        _recordingState.value = FINISHED
+                        _shouldShowRecordingScreen.value = false
+                    }
+
+                    dataState.message?.let {
+                        appendToMessageQueue(it)
+                        _recordingState.value = ERROR
+                        _shouldShowRecordingScreen.value = false
+                    }
+                }
             }
         }
     }
@@ -160,22 +252,15 @@ class ChatViewModel @Inject constructor(
         _wordCount.value = textLength
         _message.value = message
 
-        displayErrorMessage(textLength)
+        setTextLength(textLength)
     }
 
     private fun setGptVersion(aiType: AiType) {
-
-        if (aiType == GPT3) {
-            _upperLimit.value = 500
-        } else {
-            _upperLimit.value = 10000
-        }
-        displayErrorMessage(message.value.length)
+        setTextLength(message.value.length)
         chatRepository.setGptVersion(aiType)
-        _aiType.value = aiType
     }
 
-    private fun displayErrorMessage(textLength: Int) {
+    private fun setTextLength(textLength: Int) {
         if (textLength > upperLimit.value) {
             _errorMessage.value = UiText.StringResource(resId = R.string.text_is_too_long)
         } else {
@@ -184,7 +269,6 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun sendMessage(status: ConnectivityObserver.Status) {
-
         var isNewChat = false
         if (_selectedTopicId.value.isEmpty()) {
             _selectedTopicId.value = generateRandomId()
@@ -203,12 +287,13 @@ class ChatViewModel @Inject constructor(
                         isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
                         topicId = topicIdToSend
                     )
+
                     else -> chatRepository.getAndStoreOpenAiChatResponse(
                         message = messageToSend,
                         isNewChat = isNewChat,
                         isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
                         topicId = topicIdToSend,
-                        model = _aiType.value.modelName
+                        model = aiType.value.modelName
                     )
                 }
 
@@ -237,7 +322,6 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun removeHeadMessageFromQueue() {
-
         try {
             if (_messageSet.value.isNotEmpty()) {
                 val list = _messageSet.value.toMutableList()

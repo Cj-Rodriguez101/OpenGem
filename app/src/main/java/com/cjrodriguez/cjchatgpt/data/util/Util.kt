@@ -1,5 +1,6 @@
 package com.cjrodriguez.cjchatgpt.data.util
 
+import android.util.Base64
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
@@ -15,22 +16,25 @@ const val CHAT_KEY = "key"
 const val SUCCESS = "success"
 const val PASSWORD = "password"
 const val SUMMARIZE_PROMPT = "Summarize this message to 5 words max"
+const val SUMMARIZE_HISTORY_PROMPT = "Summarize this chat history as short as possible " +
+        "and keep the key points so I can use for future chats"
+const val CHAT_HISTORY_REFER_PROMPT = "Use this history to get more context on the based on the same thread:"
+const val THE_REAL_PROMPT_IS = "Then the real prompt is"
 
-fun String.transformTextToHtml(): String {
+fun String.toByteArrayCustom(): ByteArray {
+    return try {
+        Base64.encode(this.toByteArray(), Base64.DEFAULT)
+    } catch (ex: Exception) {
+        byteArrayOf()
+    }
+}
 
-    val regexCodeBlock = """(`{3}[\s\S]*?`{3})""".toRegex()
-    val regexWholeSpaceLine = """(^|\n)\s*\n""".toRegex()
-    var formattedText = this.replace(regexCodeBlock) { matchResult ->
-        val codeBlock = matchResult.value.removePrefix("```").removeSuffix("```").trim()
-        "<$PRE_TAG>${
-            codeBlock.replace("\n", "<br>")
-                .replace(" ", "&nbsp;")
-        }</$PRE_TAG>"
+fun ByteArray.toCustomString(): String {
+    return try {
+        return String(Base64.decode(this, Base64.DEFAULT))
+    } catch (ex: Exception) {
+        ""
     }
-    formattedText = formattedText.replace(regexWholeSpaceLine) { matchResult ->
-        "<br><br>"
-    }
-    return formattedText
 }
 
 fun String.revertHtmlToPlainText(): String {
@@ -55,62 +59,6 @@ fun String.revertHtmlToPlainText(): String {
     //.replace(regexNbsp, " ")
 
     return plainText
-}
-
-fun String.dividePlainHtmlAndCode(): List<Pair<String, Boolean>> {
-
-    val result = ArrayList<Pair<String, Boolean>>()
-    var currentIndex = 0
-    val preTag = "<$PRE_TAG>"
-    val preTagLength = preTag.length
-    val postTag = "</$PRE_TAG>"
-    val postTagLength = postTag.length
-
-    while (currentIndex < this.length) {
-        val startIndex = this.indexOf(preTag, currentIndex)
-        if (startIndex == -1) {
-            // No more <pre> tag found, add the remaining string to the result
-            result.add(this.substring(currentIndex) to false)
-            break
-        }
-        val endIndex = this.indexOf(postTag, startIndex)
-        if (endIndex == -1) {
-            // No corresponding </pre> tag found, add the remaining string to the result
-            result.add(this.substring(currentIndex) to false)
-            break
-        }
-        // Add the non-pre tag portion to the result
-        if (startIndex > currentIndex) {
-            result.add(this.substring(currentIndex, startIndex) to false)
-        }
-        // Add the pre tag portion to the result
-        val preContent = this.substring(startIndex + preTagLength, endIndex).trim()
-        result.add(preContent to true)
-        currentIndex = endIndex + postTagLength
-    }
-
-    return result
-}
-
-fun List<Pair<String, Boolean>>.revertCodeOrPlainHtmlBackToHtml(): String {
-
-    val stringBuilder = StringBuilder()
-    for (pair in this) {
-        if (pair.second) {
-            // If the pair is enclosed in <pre> tag, append it as is
-            stringBuilder.append("<$PRE_TAG>${pair.first}</$PRE_TAG>")
-        } else {
-            // If the pair is not enclosed in <pre> tag, escape any special characters and append it
-            stringBuilder.append(
-                pair.first.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#39;")
-            )
-        }
-    }
-    return stringBuilder.toString()
 }
 
 private val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
@@ -145,6 +93,7 @@ fun storeAndAppendResponse(
     it: String,
     topicId: String,
     lastCreatedIndex: Int,
+    modelId: String,
     chatTopicDao: ChatTopicDao
 ) {
     val affectedRows =
@@ -156,9 +105,21 @@ fun storeAndAppendResponse(
                 messageId = messageId,
                 topicId = topicId,
                 expandedContent = it,
+                modelId = modelId,
                 isUserGenerated = false,
                 lastCreatedIndex = lastCreatedIndex + 2
             )
         )
     }
+}
+
+suspend fun <T> getNewSummaryResponseFromModel(
+    topicId: String,
+    lastCreatedId: Int,
+    chatTopicDao: ChatTopicDao,
+    getSummaryResponse: suspend (List<ChatEntity>) -> T,
+): T {
+    val previousChatMessages =
+        chatTopicDao.getAllChatsFromTopicStartingAfterIndex(topicId, lastCreatedId)
+    return getSummaryResponse(previousChatMessages)
 }

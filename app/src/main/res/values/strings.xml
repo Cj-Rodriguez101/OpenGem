@@ -20,4 +20,10 @@
     <string name="wait">Wait</string>
     <string name="hold_up">Hold Up</string>
     <string name="let_him_cook">Let Him Cook</string>
+  <string name="microphone">Microphone</string>
+  <string name="close">Close</string>
+  <string name="stop_listening">Stop Listening</string>
+  <string name="converting_to_text">Converting to text...</string>
+  <string name="you_need_audio_permission">You need audio permission</string>
+  <string name="unknown_error">Unknown Error</string>
 </resources>

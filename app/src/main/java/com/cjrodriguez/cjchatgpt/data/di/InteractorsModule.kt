@@ -2,6 +2,7 @@ package com.cjrodriguez.cjchatgpt.data.di
 
 import android.content.ClipboardManager
 import android.content.Context
+import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
@@ -15,6 +16,7 @@ import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
 import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
+import com.cjrodriguez.cjchatgpt.interactors.GetTextFromSpeech
 import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
 import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import dagger.Module
@@ -96,16 +98,20 @@ object InteractorsModule {
     fun provideChatRepository(
         getOpenAiChatResponse: GetOpenAiChatResponse,
         getGeminiChatResponse: GetGeminiChatResponse,
+        getTextFromSpeech: GetTextFromSpeech,
         copyTextToClipBoard: CopyTextToClipBoard,
         settingsDataStore: SettingsDataStore,
         chatTopicDao: ChatTopicDao,
+        recorder: Recorder,
     ): ChatRepository {
         return ChatRepositoryImpl(
             getOpenAiChatResponse,
             getGeminiChatResponse,
+            getTextFromSpeech,
             copyTextToClipBoard,
             chatTopicDao,
-            settingsDataStore
+            settingsDataStore,
+            recorder
         )
     }
 
@@ -126,6 +132,15 @@ object InteractorsModule {
     fun provideLocalClipBoardManager(baseApplication: BaseApplication): ClipboardManager {
         return baseApplication.applicationContext
             .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    }
+
+    @ViewModelScoped
+    @Provides
+    fun provideGetTextFromSpeech(
+        baseApplication: BaseApplication,
+        openApiConfig: OpenApiConfig
+    ): GetTextFromSpeech {
+        return GetTextFromSpeech(baseApplication.applicationContext, openApiConfig)
     }
 
     @ViewModelScoped

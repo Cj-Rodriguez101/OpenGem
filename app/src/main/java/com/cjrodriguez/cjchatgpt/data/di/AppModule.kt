@@ -2,6 +2,8 @@ package com.cjrodriguez.cjchatgpt.data.di
 
 import android.content.Context
 import androidx.room.Room
+import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
+import com.cjrodriguez.cjchatgpt.data.datasource.audio.RecorderImpl
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatDatabase
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
@@ -66,4 +68,11 @@ object AppModule {
         return Dispatchers.IO
     }
 
+    @Singleton
+    @Provides
+    fun provideMediaRecorder(
+        baseApplication: BaseApplication
+    ): Recorder {
+        return RecorderImpl(baseApplication)
+    }
 }

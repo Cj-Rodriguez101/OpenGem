@@ -9,3 +9,15 @@ fun <T> tryCatch(input: T): String {
     }
     return errorMessage
 }
+
+//val lightFontStyle = SpanStyle(fontSize = 16.sp, color = Color(0xFF81009E))
+//val stringSize = RichTextStringStyle(
+//    boldStyle = lightFontStyle,
+//    italicStyle = lightFontStyle,
+//    underlineStyle = lightFontStyle,
+//    strikethroughStyle = lightFontStyle,
+//    subscriptStyle = lightFontStyle,
+//    superscriptStyle = lightFontStyle,
+//    codeStyle = lightFontStyle,
+//    linkStyle = lightFontStyle
+//)

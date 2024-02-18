@@ -5,6 +5,7 @@ import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 
 interface ChatRepository {
 
@@ -23,6 +24,8 @@ interface ChatRepository {
         isCurrentlyConnectedToInternet: Boolean,
     ): Flow<DataState<String>>
 
+    suspend fun getTextFromSpeech(): Flow<DataState<String>>
+
     fun copyTextToClipboard(textToCopy: String): Flow<DataState<Unit>>
 
     fun setGptVersion(aiType: AiType)
@@ -32,4 +35,14 @@ interface ChatRepository {
     fun getAllChats(topicId: String): Flow<PagingData<Chat>>
 
     fun getSelectedTopicName(topicId: String): Flow<String?>
+
+    fun getPowerLevelWithListening(): StateFlow<Float>
+
+    fun startRecording()
+
+    fun setRecordingState(isRecordingState: Boolean)
+
+    suspend fun updatePowerLevel()
+
+    fun stopRecording()
 }

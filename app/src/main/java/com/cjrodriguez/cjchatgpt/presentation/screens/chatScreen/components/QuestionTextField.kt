@@ -1,5 +1,7 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Close
@@ -20,17 +23,20 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.cjrodriguez.cjchatgpt.R
+import com.cjrodriguez.cjchatgpt.R.string
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,8 +48,10 @@ fun QuestionTextField(
     upperLimit: Int = 500,
     errorMessage: String = "",
     isLoading: Boolean = false,
+    shouldEnableTextField: Boolean = true,
     sendMessage: () -> Unit = {},
     cancelMessageGeneration: () -> Unit = {},
+    openVoiceRecordingSegment: () -> Unit = {},
     updateMessage: (String) -> Unit = {}
 ) {
 
@@ -56,19 +64,49 @@ fun QuestionTextField(
             )
 
     ) {
-        OutlinedTextField(
-            value = message, onValueChange = updateMessage, isError = errorMessage.isNotEmpty(),
-            trailingIcon = {
-                if (errorMessage.isNotEmpty())
-                    Icon(
-                        Icons.Filled.Error,
-                        stringResource(R.string.error), tint = MaterialTheme.colorScheme.error
-                    )
-            },
+        Row(
             modifier = Modifier
-                .heightIn(max = 200.dp)
-                .fillMaxWidth()
-        )
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            OutlinedTextField(
+                value = message,
+                onValueChange = updateMessage,
+                enabled = shouldEnableTextField,
+                isError = errorMessage.isNotEmpty(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                ),
+                trailingIcon = {
+                    if (errorMessage.isNotEmpty())
+                        Icon(
+                            Icons.Filled.Error,
+                            stringResource(R.string.error), tint = MaterialTheme.colorScheme.error
+                        )
+                },
+                modifier = Modifier
+                    .heightIn(max = 200.dp)
+                    .fillMaxWidth(0.9f)
+            )
+
+            AnimatedVisibility(visible = shouldEnableTextField) {
+                IconButton(
+                    onClick = openVoiceRecordingSegment,
+                    modifier = Modifier.padding(end = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = stringResource(string.microphone)
+                    )
+                }
+            }
+        }
 
         if (!isLoading) {
             CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
