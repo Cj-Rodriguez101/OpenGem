@@ -32,9 +32,10 @@ ChatGpt App Using OpenAI api
 * Observe Internet Connectivty By [Philipp Lackner](https://github.com/philipplackner/ObserveConnectivity/blob/master/app/src/main/java/com/plcoding/observeconnectivity/)
 
 
-  
 
-https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/a7fbbba5-972c-4ef0-94a8-b2c4d53633bd
+
+https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/7f01f487-37b6-4e73-873b-a72f00317e2b
+
 
 
 
