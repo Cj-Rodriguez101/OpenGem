@@ -7,21 +7,23 @@ import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.SummaryEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
-import com.cjrodriguez.cjchatgpt.data.util.CHAT_HISTORY_REFER_PROMPT
+import com.cjrodriguez.cjchatgpt.data.util.ERROR
+import com.cjrodriguez.cjchatgpt.data.util.LOADING
 import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_HISTORY_PROMPT
 import com.cjrodriguez.cjchatgpt.data.util.SUMMARIZE_PROMPT
-import com.cjrodriguez.cjchatgpt.data.util.THE_REAL_PROMPT_IS
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.data.util.getNewSummaryResponseFromModel
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
-import com.cjrodriguez.cjchatgpt.data.util.toByteArrayCustom
-import com.cjrodriguez.cjchatgpt.data.util.toCustomString
+import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
+import com.cjrodriguez.cjchatgpt.presentation.util.shouldTriggerImageModel
 import com.cjrodriguez.cjchatgpt.presentation.util.tryCatch
+import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.GenerateContentResponse
+import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -40,10 +42,11 @@ class GetGeminiChatResponse @Inject constructor(
         message: String,
         isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
-        topicId: String,
+        topicId: String
     ): Flow<DataState<String>> = flow {
         emit(DataState.loading())
         var errorMessage = ""
+        var requestMessageId = ""
 
         try {
 
@@ -64,39 +67,63 @@ class GetGeminiChatResponse @Inject constructor(
                 return@flow
             }
 
-            val responseFlow = if (isNewChat) {
-                geminiModelApi.generativeModel.generateContentStream(message)
-            } else {
-                val summaryEntity = chatTopicDao.getSummaryItemBasedOnTopic(topicId)
-                if (summaryEntity != null) {
-                    geminiModelApi.generativeModel.generateContentStream(
-                        "$CHAT_HISTORY_REFER_PROMPT \"${summaryEntity.content}\" " +
-                                "$THE_REAL_PROMPT_IS  \"$message\"",
-                    )
-                } else {
-                    geminiModelApi.generativeModel.generateContentStream(message)
+            val shouldGenerateImage = shouldTriggerImageModel(message)
+            val textGeminiModel = geminiModelApi.getGenerativeModel()
+            val textResponseFlow = when{
+                shouldGenerateImage -> null
+                isNewChat -> textGeminiModel.generateContentStream(message)
+                else -> {
+                    val summaryEntity = chatTopicDao.getSummaryItemBasedOnTopic(topicId)
+                    summaryEntity?.let {
+                        val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
+                        val contentList: MutableList<Content> = mutableListOf()
+                        history.map {
+                            if(it.imageUrl != "" ){
+                                contentList.add(content(role = "user") {
+                                    text(it.expandedContent)
+                                })
+                                contentList.add(content(role = "model") {
+                                    text("The image created was found here ${it.imageUrl}")
+                                })
+                            } else {
+                                contentList.add(
+                                    content(role = if(it.isUserGenerated) "user" else "model") {
+                                        text(it.expandedContent)
+                                    }
+                                )
+                            }
+                        }
+                        val chat = textGeminiModel.startChat(
+                            history = contentList
+                        )
+                        chat.sendMessageStream(message)
+                    }?: textGeminiModel.generateContentStream(message)
                 }
             }
 
-            val messageId = generateRandomId()
+            requestMessageId = generateRandomId()
+            val responseMessageId = generateRandomId()
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
 
             chatTopicDao.insertChatResponse(
                 ChatEntity(
-                    messageId = generateRandomId(),
+                    messageId = requestMessageId,
                     topicId = topicId,
                     expandedContent = message,
-                    lastCreatedIndex = lastCreatedIndex + 1
+                    isUserGenerated = !shouldGenerateImage,
+                    imageUrl = if (shouldGenerateImage) LOADING else "",
+                    lastCreatedIndex = lastCreatedIndex + 1,
+                    modelId = "gemini-pro"
                 )
             )
 
             coroutineScope {
                 val messageJob = async {
                     ensureActive()
-                    responseFlow.collectLatest { chunk ->
+                    textResponseFlow?.collectLatest { chunk ->
                         chunk.text?.let {
                             storeAndAppendResponse(
-                                messageId,
+                                responseMessageId,
                                 it,
                                 topicId,
                                 lastCreatedIndex,
@@ -104,11 +131,25 @@ class GetGeminiChatResponse @Inject constructor(
                                 chatTopicDao
                             )
                         }
+                    }?: textGeminiModel.generateContent(message).let {imageText ->
+                        //gemini api does not yet picture output
+                        imageText.text?.let {
+                            val image = storeImageInCache(
+                                imageUrl = it,
+                                isImageUrl = false,
+                                topicId = topicId,
+                                context = context
+                            )
+                            chatTopicDao.updateImageUrl(
+                                messageId = requestMessageId,
+                                imageUrl = image ?: ERROR
+                            )
+                        }
                     }
                 }
                 if (isNewChat) {
                     val topicFlow =
-                        geminiModelApi.generativeModel.generateContentStream("$SUMMARIZE_PROMPT $message")
+                        textGeminiModel.generateContentStream("$SUMMARIZE_PROMPT $message")
                     val topicJob = async {
                         ensureActive()
                         topicFlow.collectLatest { chunk ->
@@ -158,6 +199,19 @@ class GetGeminiChatResponse @Inject constructor(
         if (errorMessage.isEmpty()) {
             emit(DataState.data(data = topicId))
         } else {
+            if(chatTopicDao.getSpecificChat(
+                topicId = topicId,
+                messageId = requestMessageId
+            )?.imageUrl == LOADING){
+                chatTopicDao.updateImageUrl(
+                    messageId = requestMessageId,
+                    imageUrl = ERROR
+                )
+            }
+
+            if(errorMessage.contains("multiturn")){
+                chatTopicDao.deleteMessageId(requestMessageId)
+            }
             emit(
                 DataState.error(
                     message = GenericMessageInfo
@@ -179,6 +233,6 @@ class GetGeminiChatResponse @Inject constructor(
                 it.expandedContent
             }
 
-        return geminiModelApi.generativeModel.generateContent(history)
+        return geminiModelApi.getGenerativeModel().generateContent(history)
     }
 }

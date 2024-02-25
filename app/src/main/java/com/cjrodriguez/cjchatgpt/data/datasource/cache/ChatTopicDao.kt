@@ -32,6 +32,9 @@ interface ChatTopicDao {
     @Query("DELETE FROM topicTable WHERE id =:id")
     fun deleteTopicId(id: String)
 
+    @Query("DELETE FROM chatTable WHERE messageId =:messageId")
+    fun deleteMessageId(messageId: String)
+
     @Transaction
     fun deleteTopicAndMessagesWithTopicId(topicId: String) {
         deleteTopicId(topicId)
@@ -45,6 +48,9 @@ interface ChatTopicDao {
     )
     fun appendTextToContentMessage(messageId: String, textToAppend: String): Int
 
+    @Query("UPDATE chatTable SET imageUrl = :imageUrl WHERE messageId = :messageId")
+    fun updateImageUrl(messageId: String, imageUrl: String): Int
+
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
     fun appendTextToTopicTitle(topicId: String, textToAppend: String): Int
 
@@ -54,12 +60,15 @@ interface ChatTopicDao {
 //    @Query("UPDATE summaryTable SET content = CAST(CAST(content AS TEXT) || :textToAppend AS BLOB) WHERE topicId = :topicId")
 //    fun appendTextToSummary(topicId: String, textToAppend: String): Int
 
+    @Query("SELECT * FROM chatTable WHERE topicId =:topicId AND messageId =:messageId ORDER BY lastCreatedIndex DESC LIMIT 1")
+    fun getSpecificChat(topicId: String, messageId: String): ChatEntity?
+
 
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex DESC")
     fun getAllChatsFromTopic(topicId: String): PagingSource<Int, ChatEntity>
 
-//    @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex")
-//    fun getAllChatsFromTopicNoPaging(topicId: String): List<ChatEntity>
+    @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex")
+    fun getAllChatsFromTopicNoPaging(topicId: String): List<ChatEntity>
 
     @Query("SELECT * FROM chatTable WHERE topicId = :topicId AND lastCreatedIndex >= :startIndex ORDER BY lastCreatedIndex ASC")
     fun getAllChatsFromTopicStartingAfterIndex(

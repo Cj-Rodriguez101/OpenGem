@@ -39,8 +39,11 @@ class ChatRepositoryImpl @Inject constructor(
         model: String
     ): Flow<DataState<String>> {
         return getOpenAiChatResponse.execute(
-            message, isNewChat, isCurrentlyConnectedToInternet,
-            topicId, model
+            message,
+            isNewChat,
+            isCurrentlyConnectedToInternet,
+            topicId,
+            model
         )
     }
 
@@ -51,7 +54,10 @@ class ChatRepositoryImpl @Inject constructor(
         isCurrentlyConnectedToInternet: Boolean
     ): Flow<DataState<String>> {
         return getGeminiChatResponse.execute(
-            message, isNewChat, isCurrentlyConnectedToInternet, topicId
+            message,
+            isNewChat,
+            isCurrentlyConnectedToInternet,
+            topicId
         )
     }
 

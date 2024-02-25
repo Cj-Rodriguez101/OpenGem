@@ -9,6 +9,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.io.File
 import javax.inject.Inject
 
 class DeleteTopicAndChats @Inject constructor(
@@ -21,6 +22,7 @@ class DeleteTopicAndChats @Inject constructor(
         var errorMessage = ""
 
         try {
+            deleteTopicIdFolder(context, topicId)
             dao.deleteTopicAndMessagesWithTopicId(topicId)
         } catch (ex: Exception) {
             errorMessage = ex.message.toString()
@@ -47,6 +49,17 @@ class DeleteTopicAndChats @Inject constructor(
                         .uiComponentType(UIComponentType.Dialog)
                 )
             )
+        }
+    }
+
+    private fun deleteTopicIdFolder(context: Context, topicId: String): Boolean {
+        val imagesDir = context.getExternalFilesDir(null)?.absolutePath
+        val topicDir = File(imagesDir, "images/$topicId")
+
+        return if (topicDir.isDirectory) {
+            topicDir.deleteRecursively()
+        } else {
+            false // The folder was not found or it's not a directory
         }
     }
 }

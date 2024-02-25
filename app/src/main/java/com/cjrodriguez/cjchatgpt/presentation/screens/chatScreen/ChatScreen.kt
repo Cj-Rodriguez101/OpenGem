@@ -127,22 +127,9 @@ fun ChatScreen(
     val recordAudioLauncher = rememberLauncherForActivityResult(
         contract = RequestPermission(),
         onResult = { isGranted ->
-            //start listening
-//            onTriggerEvent(
-//                ChatListEvents.PermissionResult(
-//                    isGranted = isGranted,
-//                    isPermanentlyDeclined  = !isGranted && !(context as ComponentActivity)
-//                        .shouldShowRequestPermissionRationale(permission.RECORD_AUDIO)
-//                )
-//            )
-
             onTriggerEvent(ChatListEvents.StartRecording)
             hasAlreadyCheckedForPermission = true
         })
-
-//    LaunchedEffect(recordAudioLauncher){
-//        recordAudioLauncher.launch(Manifest.permission.RECORD_AUDIO)
-//    }
 
     LaunchedEffect(key1 = imeState.value) {
         if (imeState.value) {

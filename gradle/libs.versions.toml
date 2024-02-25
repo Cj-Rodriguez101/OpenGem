@@ -7,7 +7,8 @@ androidx-test-ext-junit = "1.1.5"
 espresso-core = "3.5.1"
 lifecycle-runtime-ktx = "2.6.1"
 activity-compose = "1.7.2"
-compose-bom = "2023.08.00"
+coil = "2.5.0"
+compose-bom = "2024.02.01"
 openai-client-bom = "3.6.3"
 ktor = "2.2.4"
 hilt = "2.45"
@@ -27,8 +28,14 @@ foundation = "1.6.0-alpha01" #alpha 03 has issues
 immutable = "0.3.5"
 gemini = "0.1.2"
 compose_markdown = "0.4.1"
+apache = "2.11.0"
+markwon = "4.6.2"
 
 [libraries]
+markdown-image = { group = "io.noties.markwon", name = "image", version.ref = "markwon"}
+markdown-parser = { group = "io.noties.markwon", name = "core", version.ref = "markwon"}
+apache-io = { group = "commons-io", name = "commons-io", version.ref = "apache"}
+accompanist-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}
 compose-markdown = { group = "com.github.jeziellago", name = "compose-markdown", version.ref = "compose_markdown"}
 gemini = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "gemini"}
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -40,7 +47,6 @@ activity-compose = { group = "androidx.activity", name = "activity-compose", ver
 runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "runtime-compose" }
 extended-icons = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "icons" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-client-bom = {group = "com.aallam.openai", name = "openai-client-bom", version.ref = "openai-client-bom"}
 ai-client = {group = "com.aallam.openai", name = "openai-client", version.ref = "openai-client-bom"}
 ktor = {group = "io.ktor", name = "ktor-client-android", version.ref = "ktor"}
 ui = { group = "androidx.compose.ui", name = "ui" }

@@ -21,7 +21,7 @@ interface ChatRepository {
         message: String,
         isNewChat: Boolean,
         topicId: String,
-        isCurrentlyConnectedToInternet: Boolean,
+        isCurrentlyConnectedToInternet: Boolean
     ): Flow<DataState<String>>
 
     suspend fun getTextFromSpeech(): Flow<DataState<String>>

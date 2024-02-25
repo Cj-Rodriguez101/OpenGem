@@ -38,7 +38,7 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideGeminoModelApi(): GeminiModelApi {
+    fun provideGeminiModelApi(): GeminiModelApi {
         return GeminiModelApi
     }
 

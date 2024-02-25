@@ -9,6 +9,7 @@ data class ChatEntity(
     @PrimaryKey val messageId: String = "",
     val topicId: String,
     val expandedContent: String = "",
+    val imageUrl: String = "",
     val isUserGenerated: Boolean = true,
     val modelId: String = "gpt-3.5-turbo",
     val openAiChatRole: OpeniAiRole = USER,

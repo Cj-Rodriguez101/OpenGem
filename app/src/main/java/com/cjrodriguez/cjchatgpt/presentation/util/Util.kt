@@ -10,14 +10,43 @@ fun <T> tryCatch(input: T): String {
     return errorMessage
 }
 
-//val lightFontStyle = SpanStyle(fontSize = 16.sp, color = Color(0xFF81009E))
-//val stringSize = RichTextStringStyle(
-//    boldStyle = lightFontStyle,
-//    italicStyle = lightFontStyle,
-//    underlineStyle = lightFontStyle,
-//    strikethroughStyle = lightFontStyle,
-//    subscriptStyle = lightFontStyle,
-//    superscriptStyle = lightFontStyle,
-//    codeStyle = lightFontStyle,
-//    linkStyle = lightFontStyle
-//)
+val SYNONYMS_OF_IMAGE = arrayOf(
+    "picture",
+    "image",
+    "portrait",
+    "illustration",
+    "depiction",
+    "photograph",
+    "likeness",
+    "representation",
+    "drawing",
+    "view",
+    "icon",
+    "collage",
+    "resemblance",
+    "sketch",
+    "silhouette",
+    "diagram",
+    "etching",
+    "montage",
+    "delineation",
+    "caricature",
+    "cartoon",
+    "doodle",
+    "daub",
+    "hieroglyph",
+    "ideogram",
+    "ideograph",
+    "pictograph",
+    "hieroglyphic"
+)
+
+fun shouldTriggerImageModel(prompt: String): Boolean {
+    val wordsInPrompt = prompt.split("\\s+".toRegex()).map { it.trim().toLowerCase() }
+
+    return SYNONYMS_OF_IMAGE.any { synonym ->
+        wordsInPrompt.any { word ->
+            word == synonym || word == "${synonym}s"
+        }
+    }
+}

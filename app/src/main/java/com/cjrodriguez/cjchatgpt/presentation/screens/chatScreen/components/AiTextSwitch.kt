@@ -28,7 +28,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
 @Composable
 fun AiTextSwitch(
     modifier: Modifier = Modifier,
-    aiList: Array<AiType> = AiType.values(),
+    aiList: Array<AiType> = AiType.values().filter { it.shouldBeVisible }.toTypedArray(),
     selectedAi: AiType = GPT3,
     changeSelectedItem: (AiType) -> Unit = {},
 ) {

@@ -1,9 +1,25 @@
 package com.cjrodriguez.cjchatgpt.data.util
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.net.Uri
 import android.util.Base64
+import android.util.Log
+import android.view.View.MeasureSpec
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
+import io.noties.markwon.Markwon
+import io.noties.markwon.image.ImagesPlugin
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.net.URL
 
 const val GPT_3 = "GPT3"
 const val CHAT_DB = "Chat.db"
@@ -14,11 +30,13 @@ const val GPT_SETTINGS = "settings"
 const val PRE_TAG = "pre-wrap"
 const val CHAT_KEY = "key"
 const val SUCCESS = "success"
+const val LOADING = "LOADING"
+const val ERROR = "ERROR"
 const val PASSWORD = "password"
-const val SUMMARIZE_PROMPT = "Summarize this message to 5 words max"
+const val SUMMARIZE_PROMPT = "Summarize this message to 5 words max and no special symbols just plain text"
 const val SUMMARIZE_HISTORY_PROMPT = "Summarize this chat history as short as possible " +
         "and keep the key points so I can use for future chats"
-const val CHAT_HISTORY_REFER_PROMPT = "Use this history to get more context on the based on the same thread:"
+const val CHAT_HISTORY_REFER_PROMPT = "Use this history to get about the previous chats on the same thread:"
 const val THE_REAL_PROMPT_IS = "Then the real prompt is"
 
 fun String.toByteArrayCustom(): ByteArray {
@@ -32,6 +50,15 @@ fun String.toByteArrayCustom(): ByteArray {
 fun ByteArray.toCustomString(): String {
     return try {
         return String(Base64.decode(this, Base64.DEFAULT))
+    } catch (ex: Exception) {
+        ""
+    }
+}
+
+fun ByteArrayOutputStream.toCustomString(): String {
+    return try {
+        val bytes = this.toByteArray()
+        return String(Base64.decode(bytes, Base64.DEFAULT))
     } catch (ex: Exception) {
         ""
     }
@@ -110,6 +137,86 @@ fun storeAndAppendResponse(
                 lastCreatedIndex = lastCreatedIndex + 2
             )
         )
+    }
+}
+
+private fun convertImageUrlToByteArray(imageUrl: String): ByteArray{
+    val url = URL(imageUrl)
+    val inputStream = url.openStream()
+    return org.apache.commons.io.IOUtils.toByteArray(inputStream)
+}
+
+fun ByteArray.toShortFileName(): String {
+    val base64Encoded = Base64.encodeToString(this, Base64.DEFAULT)
+
+    val safeFileName = base64Encoded
+        .replace("/", "_")
+        .replace("+", "-")
+        .replace("=", "")
+
+    return safeFileName.take(10)
+}
+
+fun storeImageInCache(
+    imageUrl: String,
+    isImageUrl: Boolean = true,
+    topicId: String,
+    context:Context
+): String?{
+    val byteArray = if (isImageUrl){
+        convertImageUrlToByteArray(imageUrl)
+    } else {
+        val markwon = Markwon.builder(context).usePlugin(ImagesPlugin.create()).build()
+        val renderedMarkdown = markwon.toMarkdown(imageUrl)
+
+        val textView = android.widget.TextView(context).apply {
+            text = renderedMarkdown
+            textSize = 18f
+            setTextColor(android.graphics.Color.BLACK)
+            setBackgroundColor(android.graphics.Color.WHITE)
+            measure(
+                MeasureSpec.makeMeasureSpec(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED),
+                MeasureSpec.makeMeasureSpec(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED),
+            )
+            layout(0,0, measuredWidth, measuredHeight)
+        }
+
+        val bitmap = Bitmap.createBitmap(textView.measuredWidth, textView.measuredHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        textView.draw(canvas)
+
+        // Convert bitmap to byte array
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        stream.toByteArray()
+    }
+    val imageTitle = if (isImageUrl) byteArray.toCustomString() else byteArray.toShortFileName()
+    return try {
+        val directoryPath = "images/$topicId"
+        val imagesDir = File(context.getExternalFilesDir(directoryPath), "")
+        if (!imagesDir.exists()) {
+            imagesDir.mkdirs() // Make sure the directory exists
+        }
+        context.contentResolver.openFileDescriptor(Uri
+            .fromFile(File(context.getExternalFilesDir(directoryPath)?.absolutePath
+                    + "/" + imageTitle + ".jpg")), "w")?.use {
+            FileOutputStream(it.fileDescriptor).use {
+                it.write(
+                    byteArray
+                )
+            }
+        }
+
+        //val imagesDir = File(context.getExternalFilesDir("images"), "")
+        val imageFile = File(imagesDir, "$imageTitle.jpg")
+        return Uri.fromFile(imageFile).toString()
+
+    } catch (e: FileNotFoundException) {
+        Log.e("file", e.toString())
+        null
+    } catch (e: IOException) {
+        Log.e("io", e.toString())
+        null
     }
 }
 

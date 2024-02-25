@@ -158,7 +158,6 @@ class ChatViewModel @Inject constructor(
             }
 
             is SetGptVersion -> {
-                // _selectedTopicId.value = ""
                 setGptVersion(events.aiType)
             }
 
@@ -194,21 +193,6 @@ class ChatViewModel @Inject constructor(
             else -> Unit
         }
     }
-
-//    private fun stopRecording() {
-//        viewModelScope.launch {
-//            try {
-//                chatRepository.stopRecording()
-//                _recordingState.value = PROCESSING
-//                getTextToSpeech()
-//            } catch (ex: Exception) {
-//                appendToMessageQueue(
-//                    Builder().title("error")
-//                        .description(ex.message.toString())
-//                )
-//            }
-//        }
-//    }
 
     private fun getTextToSpeech() {
         viewModelScope.launch {
@@ -279,19 +263,20 @@ class ChatViewModel @Inject constructor(
             withContext(coroutineDispatcher) {
                 val messageToSend = message.value.trim()
                 val topicIdToSend = _selectedTopicId.value
+                val isConnectedToInternet = status == ConnectivityObserver.Status.Available
 
                 val responseFlow = when (aiType.value) {
                     AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
                         message = messageToSend,
                         isNewChat = isNewChat,
-                        isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
+                        isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend
                     )
 
                     else -> chatRepository.getAndStoreOpenAiChatResponse(
                         message = messageToSend,
                         isNewChat = isNewChat,
-                        isCurrentlyConnectedToInternet = status == ConnectivityObserver.Status.Available,
+                        isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend,
                         model = aiType.value.modelName
                     )

@@ -67,8 +67,11 @@ kapt {
 }
 
 dependencies {
+    implementation(libs.markdown.image)
+    implementation(libs.markdown.parser)
+    implementation(libs.apache.io)
+    implementation(libs.accompanist.coil)
     implementation(libs.compose.markdown)
-    //implementation(libs.rich.text)
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
