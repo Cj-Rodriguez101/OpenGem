@@ -1,5 +1,5 @@
 # Cj_ChatGPT
-ChatGpt App Using OpenAI api
+Gpt App Using OpenAI api and Gemini
 
 ## Features
 * Ask GPT 3.5, 4 and GEMINI any questions
