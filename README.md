@@ -9,7 +9,7 @@ Gpt App Using OpenAI api and Gemini
 * Rename And Delete History
 * Chat - WIP
 * Whisper - WIP
-* Generate Images (DALL-E-3 works but Gemini Api does not support image generation yet) - WIP
+* Generate and Store Images (DALL-E-3 works but Gemini Api does not support image generation yet) - WIP
 
 ## Architecture - MVVM
 ## Tools
@@ -35,9 +35,7 @@ Gpt App Using OpenAI api and Gemini
 
 * [chat_image.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/047d7ca7-27bc-4f85-84a2-c9c043c0887d)
 * [broke.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/ebb99a98-244c-40ff-9df9-ed6d1698129e)
-
-
-
+* [image stored.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/bb662368-ccc0-47aa-84eb-d7a0f9ccaf8e)
 
 <p align="center"
 float="center">
