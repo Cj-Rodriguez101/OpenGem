@@ -26,6 +26,8 @@ import com.cjrodriguez.cjchatgpt.data.util.getNewSummaryResponseFromModel
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
 import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
+import com.cjrodriguez.cjchatgpt.data.util.toByteArrayCustom
+import com.cjrodriguez.cjchatgpt.data.util.toCustomString
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
@@ -43,7 +45,7 @@ import javax.inject.Inject
 class GetOpenAiChatResponse @Inject constructor(
     private val context: Context,
     private val openApiConfig: OpenApiConfig,
-    private val chatTopicDao: ChatTopicDao,
+    private val chatTopicDao: ChatTopicDao
 ) {
     fun execute(
         message: String,
@@ -81,7 +83,7 @@ class GetOpenAiChatResponse @Inject constructor(
                 isNewChat -> getOpenAiResponseFlow(message, model)
                 else -> chatTopicDao.getSummaryItemBasedOnTopic(topicId)?.let { summaryEntity ->
                     getOpenAiResponseFlow(
-                        "$CHAT_HISTORY_REFER_PROMPT \"${summaryEntity.content}\" " +
+                        "$CHAT_HISTORY_REFER_PROMPT \"${(summaryEntity.content).toCustomString()}\" " +
                                 "$THE_REAL_PROMPT_IS  \"$message\"",
                                                 //"""
 //                    Given the context provided, please focus on addressing the current query:
@@ -167,12 +169,12 @@ class GetOpenAiChatResponse @Inject constructor(
                         0,
                         chatTopicDao
                     ) { getSummarizedOpenAiResponseFlow(it) }
-                    summary.choices[0].message.content.let {
-                        Log.e("openai", "new $it")
+                    summary.choices[0].message.content?.let {
+                        Log.e("openai", "new summary \n $it")
                         chatTopicDao.insertSummaryResponse(
                             SummaryEntity(
                                 topicId = topicId,
-                                content = it.toString()
+                                content = it.toByteArrayCustom()
                             )
                         )
                     }
@@ -183,9 +185,18 @@ class GetOpenAiChatResponse @Inject constructor(
                         topicId,
                         lastCreatedId,
                         chatTopicDao
-                    ) { getSummarizedOpenAiResponseFlow(it) }
-                    summary.choices[0].message.content.let {
-                        chatTopicDao.appendTextToSummary(topicId, it.toString())
+                    ) { if (!shouldGenerateImage) getSummarizedOpenAiResponseFlow(it) else null }
+                    summary?.choices?.get(0)?.message?.content.let {
+                        val summaryInCache =
+                            chatTopicDao.getSummaryItemBasedOnTopic(topicId) ?: return@let
+                        val decryptedString =
+                            (summaryInCache.content).toCustomString() + " ${it ?: "An image created using this prompt $message"}"
+                        chatTopicDao.insertSummaryResponse(
+                            summaryInCache
+                                .copy(
+                                    content = decryptedString.toByteArrayCustom()
+                                )
+                        )
                     }
                 }
 //                if (shouldGenerateImage) chatTopicDao

@@ -2,7 +2,6 @@ package com.cjrodriguez.cjchatgpt.data.datasource.cache
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.SummaryEntity
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
@@ -12,8 +11,7 @@ import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.TopicEntity
     version = 1,
     exportSchema = false
 )
-@TypeConverters(Converters::class)
+//@TypeConverters(value = [DataConverters::class])
 abstract class ChatDatabase : RoomDatabase() {
-
     abstract fun chatTopicDao(): ChatTopicDao
 }

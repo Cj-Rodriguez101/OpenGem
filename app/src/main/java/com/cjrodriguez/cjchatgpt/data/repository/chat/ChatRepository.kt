@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface ChatRepository {
 
-    suspend fun getAndStoreOpenAiChatResponse(
+    fun getAndStoreOpenAiChatResponse(
         message: String,
         isNewChat: Boolean,
         topicId: String,
@@ -17,14 +17,14 @@ interface ChatRepository {
         model: String
     ): Flow<DataState<String>>
 
-    suspend fun getAndStoreGeminiResponse(
+    fun getAndStoreGeminiResponse(
         message: String,
         isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean
     ): Flow<DataState<String>>
 
-    suspend fun getTextFromSpeech(): Flow<DataState<String>>
+    fun getTextFromSpeech(): Flow<DataState<String>>
 
     fun copyTextToClipboard(textToCopy: String): Flow<DataState<Unit>>
 
@@ -43,6 +43,8 @@ interface ChatRepository {
     fun setRecordingState(isRecordingState: Boolean)
 
     suspend fun updatePowerLevel()
+
+    fun saveImage(imagePath: String): Flow<DataState<String>>
 
     fun stopRecording()
 }

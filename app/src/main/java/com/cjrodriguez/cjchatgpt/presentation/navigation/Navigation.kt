@@ -28,9 +28,11 @@ fun Navigation(status: ConnectivityObserver.Status) {
         composable(Screen.ChatScreen.route) { backStackEntry ->
 
             val chatViewModel = hiltViewModel<ChatViewModel>()
+            val backStackTopicId by backStackEntry.savedStateHandle
+                .getStateFlow<String?>(CHAT_KEY, null).collectAsStateWithLifecycle()
 
-            LaunchedEffect(key1 = Unit) {
-                backStackEntry.savedStateHandle.get<String>(CHAT_KEY)?.let {
+            LaunchedEffect(key1 = backStackTopicId) {
+                backStackTopicId?.let {
                     chatViewModel.onTriggerEvent(
                         ChatListEvents.SetTopicId(it)
                     )
@@ -48,6 +50,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val isLoading by chatViewModel.isLoading.collectAsStateWithLifecycle()
             val messageSet by chatViewModel.messageSet.collectAsStateWithLifecycle()
             val shouldShowVoiceSegment by chatViewModel.shouldShowRecordingScreen.collectAsStateWithLifecycle()
+            val imageZoomedInPath by chatViewModel.imageZoomedInPath.collectAsStateWithLifecycle()
             val recordingState by chatViewModel.recordingState.collectAsStateWithLifecycle()
             val powerLevel by chatViewModel.powerLevel.collectAsStateWithLifecycle()
             val allChats = chatViewModel.chatPagingFlow.collectAsLazyPagingItems()
@@ -65,11 +68,10 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 recordingState = recordingState,
                 shouldShowRecordingScreen = shouldShowVoiceSegment,
                 circlePowerLevel = powerLevel,
+                imageZoomedInPath = imageZoomedInPath,
                 topicId = topicId,
                 navigateToHistoryScreen =
-                {
-                    navController.navigate(route = Screen.TopicScreen.route + "/{$it}")
-                },
+                { navController.navigate(route = Screen.TopicScreen.route + "/{$it}") },
                 onTriggerEvent = chatViewModel::onTriggerEvent
             )
         }

@@ -16,14 +16,19 @@
     <string name="rename">Rename</string>
     <string name="no_chats_present">No Chats Present</string>
     <string name="new_name">New Name</string>
-    <string name="no_internet_available">No Internet Available</string>
-    <string name="wait">Wait</string>
-    <string name="hold_up">Hold Up</string>
-    <string name="let_him_cook">Let Him Cook</string>
+  <string name="no_internet_available">No Internet Available</string>
+  <string name="wait">Wait</string>
+  <string name="hold_up">Hold Up</string>
+  <string name="let_him_cook">Let Him Cook</string>
   <string name="microphone">Microphone</string>
   <string name="close">Close</string>
   <string name="stop_listening">Stop Listening</string>
   <string name="converting_to_text">Converting to text...</string>
   <string name="you_need_audio_permission">You need audio permission</string>
   <string name="unknown_error">Unknown Error</string>
+  <string name="scroll_down">Scroll down</string>
+  <string name="generated_image">generated image</string>
+  <string name="failed_to_save_image">Failed to save image</string>
+  <string name="successfully_saved_picture">Successfully saved picture</string>
+  <string name="you_need_permission_to_save_picture">You need permission to save picture</string>
 </resources>

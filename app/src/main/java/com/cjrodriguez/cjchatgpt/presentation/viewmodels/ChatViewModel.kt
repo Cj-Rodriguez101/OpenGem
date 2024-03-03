@@ -12,12 +12,14 @@ import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.NewChat
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SendMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetGptVersion
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetRecordingState
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetShouldShowVoiceSegment
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetTopicId
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetZoomedImageUrl
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StartRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.UpdatePowerLevel
@@ -39,6 +41,7 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
@@ -113,6 +116,9 @@ class ChatViewModel @Inject constructor(
 
     private val _cancellableCoroutineScope: MutableStateFlow<Job?> = MutableStateFlow(null)
 
+    private val _imageZoomedInPath: MutableStateFlow<String> = MutableStateFlow("")
+    val imageZoomedInPath: StateFlow<String> = _imageZoomedInPath.asStateFlow()
+
     init {
         viewModelScope.launch {
             launch {
@@ -143,6 +149,14 @@ class ChatViewModel @Inject constructor(
 
             is NewChat -> {
                 _selectedTopicId.value = ""
+            }
+
+            is SaveFile -> {
+                saveFile(events.imagePath)
+            }
+
+            is SetZoomedImageUrl -> {
+                _imageZoomedInPath.value = events.imagePath
             }
 
             is SetMessage -> {
@@ -191,6 +205,24 @@ class ChatViewModel @Inject constructor(
             }
 
             else -> Unit
+        }
+    }
+
+    private fun saveFile(imagePath: String) {
+        viewModelScope.launch {
+            withContext(coroutineDispatcher) {
+                chatRepository.saveImage(imagePath).collectLatest { dataState ->
+                    _isLoading.value = dataState.isLoading
+
+                    dataState.data?.let {
+                        onTriggerEvent(SetZoomedImageUrl(""))
+                    }
+
+                    dataState.message?.let {
+                        appendToMessageQueue(it)
+                    }
+                }
+            }
         }
     }
 

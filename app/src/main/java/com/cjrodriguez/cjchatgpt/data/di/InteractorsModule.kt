@@ -18,6 +18,7 @@ import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetTextFromSpeech
 import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
+import com.cjrodriguez.cjchatgpt.interactors.SaveGeneratedImage
 import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import dagger.Module
 import dagger.Provides
@@ -39,7 +40,7 @@ object InteractorsModule {
         return GetOpenAiChatResponse(
             baseApplication.applicationContext,
             openApiConfig,
-            chatTopicDao,
+            chatTopicDao
         )
     }
 
@@ -53,7 +54,7 @@ object InteractorsModule {
         return GetGeminiChatResponse(
             baseApplication.applicationContext,
             geminiModelApi,
-            chatTopicDao,
+            chatTopicDao
         )
     }
 
@@ -95,11 +96,22 @@ object InteractorsModule {
 
     @ViewModelScoped
     @Provides
+    fun provideSaveGeneratedImage(
+        baseApplication: BaseApplication
+    ): SaveGeneratedImage {
+        return SaveGeneratedImage(
+            context = baseApplication,
+        )
+    }
+
+    @ViewModelScoped
+    @Provides
     fun provideChatRepository(
         getOpenAiChatResponse: GetOpenAiChatResponse,
         getGeminiChatResponse: GetGeminiChatResponse,
         getTextFromSpeech: GetTextFromSpeech,
         copyTextToClipBoard: CopyTextToClipBoard,
+        saveGeneratedImage: SaveGeneratedImage,
         settingsDataStore: SettingsDataStore,
         chatTopicDao: ChatTopicDao,
         recorder: Recorder,
@@ -109,6 +121,7 @@ object InteractorsModule {
             getGeminiChatResponse,
             getTextFromSpeech,
             copyTextToClipBoard,
+            saveGeneratedImage,
             chatTopicDao,
             settingsDataStore,
             recorder

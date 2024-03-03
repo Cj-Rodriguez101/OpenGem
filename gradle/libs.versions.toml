@@ -1,6 +1,6 @@
 [versions]
 agp = "8.2.2"
-kotlin = "1.8.10"
+kotlin = "1.9.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.1.5"
@@ -11,15 +11,15 @@ coil = "2.5.0"
 compose-bom = "2024.02.01"
 openai-client-bom = "3.6.3"
 ktor = "2.2.4"
-hilt = "2.45"
+hilt = "2.48"
 hilt-compose = "1.0.0"
 hilt-navigation = "1.0.0"
 accompanist = "0.28.0"
 constraint = "1.0.1"
 runtime-compose = "2.6.1"
 icons = "1.5.0"
-room = "2.5.2"
-ksp = "1.8.10-1.0.9"
+room = "2.6.1"
+ksp = "1.9.10-1.0.13"
 dataStore = "1.0.0"
 paging-compose = "3.2.0"
 paging-runtime = "3.2.0"
@@ -30,9 +30,11 @@ gemini = "0.1.2"
 compose_markdown = "0.4.1"
 apache = "2.11.0"
 markwon = "4.6.2"
+zoom = "1.6.0"
 
 [libraries]
-markdown-image = { group = "io.noties.markwon", name = "image", version.ref = "markwon"}
+zoomable = { group = "net.engawapg.lib", name = "zoomable", version.ref = "zoom" }
+markdown-image = { group = "io.noties.markwon", name = "image", version.ref = "markwon" }
 markdown-parser = { group = "io.noties.markwon", name = "core", version.ref = "markwon"}
 apache-io = { group = "commons-io", name = "commons-io", version.ref = "apache"}
 accompanist-coil = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil"}

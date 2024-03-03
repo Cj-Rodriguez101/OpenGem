@@ -23,7 +23,7 @@ class GetTextFromSpeech @Inject constructor(
     private val openAIConfig: OpenApiConfig
 ) {
     @SuppressLint("MissingPermission")
-    suspend fun execute(): Flow<DataState<String>> = flow {
+    fun execute(): Flow<DataState<String>> = flow {
         emit(DataState.loading())
 
         try {

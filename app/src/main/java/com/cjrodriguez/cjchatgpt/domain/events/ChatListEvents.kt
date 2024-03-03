@@ -18,6 +18,8 @@ sealed class ChatListEvents {
     object CancelChatGeneration : ChatListEvents()
     object RemoveHeadMessage : ChatListEvents()
     object StartRecording : ChatListEvents()
+    data class SaveFile(val imagePath: String) : ChatListEvents()
+    data class SetZoomedImageUrl(val imagePath: String) : ChatListEvents()
 
     object UpdatePowerLevel : ChatListEvents()
     object StopRecording : ChatListEvents()

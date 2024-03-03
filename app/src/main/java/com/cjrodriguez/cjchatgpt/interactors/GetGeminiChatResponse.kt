@@ -1,7 +1,6 @@
 package com.cjrodriguez.cjchatgpt.interactors
 
 import android.content.Context
-import android.util.Log
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
@@ -16,6 +15,9 @@ import com.cjrodriguez.cjchatgpt.data.util.getNewSummaryResponseFromModel
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
 import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
+import com.cjrodriguez.cjchatgpt.data.util.toByteArrayCustom
+import com.cjrodriguez.cjchatgpt.data.util.toCustomString
+import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GEMINI
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
@@ -36,7 +38,7 @@ import javax.inject.Inject
 class GetGeminiChatResponse @Inject constructor(
     private val context: Context,
     private val geminiModelApi: GeminiModelApi,
-    private val chatTopicDao: ChatTopicDao,
+    private val chatTopicDao: ChatTopicDao
 ) {
     fun execute(
         message: String,
@@ -113,7 +115,7 @@ class GetGeminiChatResponse @Inject constructor(
                     isUserGenerated = !shouldGenerateImage,
                     imageUrl = if (shouldGenerateImage) LOADING else "",
                     lastCreatedIndex = lastCreatedIndex + 1,
-                    modelId = "gemini-pro"
+                    modelId = GEMINI.modelName
                 )
             )
 
@@ -127,7 +129,7 @@ class GetGeminiChatResponse @Inject constructor(
                                 it,
                                 topicId,
                                 lastCreatedIndex,
-                                "gemini-pro",
+                                GEMINI.modelName,
                                 chatTopicDao
                             )
                         }
@@ -168,13 +170,16 @@ class GetGeminiChatResponse @Inject constructor(
                         topicId,
                         0,
                         chatTopicDao
-                    ) { getSummarizedGeminiResponseFlow(it) }
-                    summary.text.let {
-                        Log.e("gemini", "new $it")
+                    ) {
+                        if (!shouldGenerateImage) getSummarizedGeminiResponseFlow(it)
+                        else null
+                    }
+                    summary?.text.let {
                         chatTopicDao.insertSummaryResponse(
                             SummaryEntity(
                                 topicId = topicId,
-                                content = it.toString()
+                                content = (it ?: "An image created using this prompt $message")
+                                    .toByteArrayCustom()
                             )
                         )
                     }
@@ -186,9 +191,16 @@ class GetGeminiChatResponse @Inject constructor(
                         lastCreatedId,
                         chatTopicDao
                     ) { getSummarizedGeminiResponseFlow(it) }
-                    summary.text.let {
-                        Log.e("gemini", "not new $it")
-                        chatTopicDao.appendTextToSummary(topicId, it.toString())
+                    summary.text?.let {
+                        val summaryInCache =
+                            chatTopicDao.getSummaryItemBasedOnTopic(topicId) ?: return@let
+                        val decryptedString = (summaryInCache.content).toCustomString() + " $it"
+                        chatTopicDao.insertSummaryResponse(
+                            summaryInCache.copy(
+                                content = decryptedString.toByteArrayCustom()
+                            )
+                        )
+                        //chatTopicDao.appendTextToSummary(topicId, it.toString())
                     }
                 }
             }

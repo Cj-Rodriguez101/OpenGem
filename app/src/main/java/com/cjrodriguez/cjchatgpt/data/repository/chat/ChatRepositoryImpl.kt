@@ -12,6 +12,7 @@ import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetTextFromSpeech
+import com.cjrodriguez.cjchatgpt.interactors.SaveGeneratedImage
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.toChat
@@ -27,11 +28,12 @@ class ChatRepositoryImpl @Inject constructor(
     private val getGeminiChatResponse: GetGeminiChatResponse,
     private val getTextFromSpeech: GetTextFromSpeech,
     private val copyTextToClipBoard: CopyTextToClipBoard,
+    private val saveGeneratedImage: SaveGeneratedImage,
     private val dao: ChatTopicDao,
     private val settingsDataStore: SettingsDataStore,
     private val recorder: Recorder,
 ) : ChatRepository {
-    override suspend fun getAndStoreOpenAiChatResponse(
+    override fun getAndStoreOpenAiChatResponse(
         message: String,
         isNewChat: Boolean,
         topicId: String,
@@ -47,7 +49,7 @@ class ChatRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun getAndStoreGeminiResponse(
+    override fun getAndStoreGeminiResponse(
         message: String,
         isNewChat: Boolean,
         topicId: String,
@@ -65,7 +67,7 @@ class ChatRepositoryImpl @Inject constructor(
         return copyTextToClipBoard.execute(textToCopy)
     }
 
-    override suspend fun getTextFromSpeech(): Flow<DataState<String>> {
+    override fun getTextFromSpeech(): Flow<DataState<String>> {
         return getTextFromSpeech.execute()
     }
 
@@ -109,6 +111,10 @@ class ChatRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             recorder.updatePowerLevel()
         }
+    }
+
+    override fun saveImage(imagePath: String): Flow<DataState<String>> {
+        return saveGeneratedImage.execute(imagePath)
     }
 
     override fun stopRecording() {

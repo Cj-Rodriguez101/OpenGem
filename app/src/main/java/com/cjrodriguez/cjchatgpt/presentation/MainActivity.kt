@@ -8,6 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.NetworkConnectivityObserver
 import com.cjrodriguez.cjchatgpt.presentation.navigation.Navigation
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ZoomableComposable
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

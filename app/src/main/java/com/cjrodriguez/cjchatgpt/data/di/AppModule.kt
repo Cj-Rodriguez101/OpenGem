@@ -50,6 +50,13 @@ object AppModule {
         ).fallbackToDestructiveMigration().build()
     }
 
+//    @Singleton
+//    @Provides
+//    fun provideDatabaseHelper(@ApplicationContext app: Context): ChatDatabase {
+//        DatabaseHelper(app)
+//        return DatabaseHelper.instance
+//    }
+
     @Singleton
     @Provides
     fun provideSongDao(chatDatabase: ChatDatabase): ChatTopicDao {
