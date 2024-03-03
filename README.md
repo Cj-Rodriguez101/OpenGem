@@ -1,5 +1,5 @@
 # Cj_ChatGPT
-ChatGpt App Using OpenAI api
+Gpt App Using OpenAI api and Gemini
 
 ## Features
 * Ask GPT 3.5, 4 and GEMINI any questions
@@ -7,8 +7,9 @@ ChatGpt App Using OpenAI api
 * Copy Any Chat
 * Search And Filter History
 * Rename And Delete History
-* Chat (WIP)
-* Whisper (WIP)
+* Chat - WIP
+* Whisper - WIP
+* Generate Images (DALL-E-3 works but Gemini Api does not support image generation yet) - WIP
 
 ## Architecture - MVVM
 ## Tools
@@ -32,9 +33,8 @@ ChatGpt App Using OpenAI api
 * Observe Internet Connectivty By [Philipp Lackner](https://github.com/philipplackner/ObserveConnectivity/blob/master/app/src/main/java/com/plcoding/observeconnectivity/)
 
 
-
-
-https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/7f01f487-37b6-4e73-873b-a72f00317e2b
+* [chat_image.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/047d7ca7-27bc-4f85-84a2-c9c043c0887d)
+* [broke.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/ebb99a98-244c-40ff-9df9-ed6d1698129e)
 
 
 
