@@ -1,9 +1,13 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 
 import android.Manifest.permission
+import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.animation.AnimatedVisibility
@@ -77,6 +81,7 @@ import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AiTextSwitch
@@ -515,22 +520,43 @@ fun ChatScreen(
                     ZoomableComposable(
                         imageZoomedInPath,
                         downloadImage = {
-                            if (externalPermissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                                //start listening
-                                onTriggerEvent(ChatListEvents.SaveFile(imageZoomedInPath))
-                            } else if (!hasAlreadyCheckedForStoragePermission) {
-                                storageLauncher.launch(permission.WRITE_EXTERNAL_STORAGE)
+                            if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+                                onTriggerEvent(SaveFile(imageZoomedInPath))
                             } else {
-                                Toast.makeText(
-                                    context,
-                                    context.getString(string.you_need_permission_to_save_picture),
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                requestOrHandlePermissionOnSave(
+                                    externalPermissionCheckResult,
+                                    onTriggerEvent,
+                                    imageZoomedInPath,
+                                    hasAlreadyCheckedForStoragePermission,
+                                    storageLauncher,
+                                    context
+                                )
                             }
                         }
                     )
                 }
             }
         }
+    }
+}
+
+private fun requestOrHandlePermissionOnSave(
+    externalPermissionCheckResult: Int,
+    onTriggerEvent: (ChatListEvents) -> Unit,
+    imageZoomedInPath: String,
+    hasAlreadyCheckedForStoragePermission: Boolean,
+    storageLauncher: ManagedActivityResultLauncher<String, Boolean>,
+    context: Context
+) {
+    if (externalPermissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+        onTriggerEvent(SaveFile(imageZoomedInPath))
+    } else if (!hasAlreadyCheckedForStoragePermission) {
+        storageLauncher.launch(permission.WRITE_EXTERNAL_STORAGE)
+    } else {
+        Toast.makeText(
+            context,
+            context.getString(string.you_need_permission_to_save_picture),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
