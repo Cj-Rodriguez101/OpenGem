@@ -83,6 +83,7 @@ import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
+import com.cjrodriguez.cjchatgpt.presentation.MainActivity
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AiTextSwitch
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AnimateTypewriterText
@@ -166,6 +167,8 @@ fun ChatScreen(
             onTriggerEvent(ChatListEvents.RemoveHeadMessage)
         }
     ) {
+        //fix keyboard backdrop color issue in dark mode
+        (context as? MainActivity)?.window?.decorView?.setBackgroundColor(MaterialTheme.colorScheme.background.hashCode())
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
