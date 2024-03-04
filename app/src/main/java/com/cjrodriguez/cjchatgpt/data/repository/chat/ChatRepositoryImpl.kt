@@ -8,6 +8,7 @@ import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
+import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
@@ -34,7 +35,7 @@ class ChatRepositoryImpl @Inject constructor(
     private val recorder: Recorder,
 ) : ChatRepository {
     override fun getAndStoreOpenAiChatResponse(
-        message: String,
+        message: MessageWrapper,
         isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean,
@@ -50,7 +51,7 @@ class ChatRepositoryImpl @Inject constructor(
     }
 
     override fun getAndStoreGeminiResponse(
-        message: String,
+        message: MessageWrapper,
         isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean

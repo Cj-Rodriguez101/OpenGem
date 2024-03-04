@@ -48,8 +48,8 @@ interface ChatTopicDao {
     )
     fun appendTextToContentMessage(messageId: String, textToAppend: String): Int
 
-    @Query("UPDATE chatTable SET imageUrl = :imageUrl WHERE messageId = :messageId")
-    fun updateImageUrl(messageId: String, imageUrl: String): Int
+    @Query("UPDATE chatTable SET imageUrls = :imageUrl WHERE messageId = :messageId")
+    fun updateImageUrl(messageId: String, imageUrl: List<String>): Int
 
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
     fun appendTextToTopicTitle(topicId: String, textToAppend: String): Int

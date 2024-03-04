@@ -6,7 +6,7 @@ data class Chat(
     val messageId: String = "",
     val topicId: String,
     val content: String,
-    val imageUrl: String,
+    val imageUrls: List<String>,
     val isUserGenerated: Boolean = true,
     val aiType: AiType,
     val lastCreatedIndex: Int = 0

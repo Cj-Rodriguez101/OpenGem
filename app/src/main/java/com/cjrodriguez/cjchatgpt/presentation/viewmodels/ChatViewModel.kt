@@ -6,12 +6,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.cjrodriguez.cjchatgpt.R
+import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.AddImage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.NewChat
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.RemoveImage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SendMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetGptVersion
@@ -24,6 +27,7 @@ import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StartRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.UpdatePowerLevel
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
+import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
@@ -33,6 +37,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.ERROR
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.FINISHED
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.PROCESSING
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.RECORDING
+import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +53,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -68,6 +74,11 @@ class ChatViewModel @Inject constructor(
 
     private val _shouldShowRecordingScreen: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val shouldShowRecordingScreen = _shouldShowRecordingScreen.asStateFlow()
+
+    private val _selectedFiles: MutableStateFlow<MutableList<MPFile<Any>>> = MutableStateFlow(
+        mutableListOf()
+    )
+    val selectedFiles = _selectedFiles.asStateFlow()
 
     private val _selectedTopicId: MutableStateFlow<String> = MutableStateFlow("")
     val selectedTopicId = _selectedTopicId.asStateFlow()
@@ -164,7 +175,15 @@ class ChatViewModel @Inject constructor(
             }
 
             is SendMessage -> {
-                sendMessage(events.isCurrentlyConnectedToInternet)
+                sendMessage(events.isCurrentlyConnectedToInternet, events.fileUris)
+            }
+
+            is AddImage -> {
+                addImage(events.messageToCopy)
+            }
+
+            is RemoveImage -> {
+                removeImage(events.messageToCopy)
             }
 
             is SetTopicId -> {
@@ -205,6 +224,26 @@ class ChatViewModel @Inject constructor(
             }
 
             else -> Unit
+        }
+    }
+
+    private fun removeImage(fileToRemove: MPFile<Any>) {
+        if (!_selectedFiles.value.contains(fileToRemove)) return
+        viewModelScope.launch {
+            _selectedFiles.update { currentFiles ->
+                currentFiles.toMutableList().apply { remove(fileToRemove) }
+            }
+            updateErrorMessageIfFileIsTooLarge()
+        }
+    }
+
+    private fun addImage(fileToAdd: MPFile<Any>) {
+        if (_selectedFiles.value.contains(fileToAdd)) return
+        viewModelScope.launch {
+            _selectedFiles.update { currentFiles ->
+                currentFiles.toMutableList().apply { add(fileToAdd) }
+            }
+            updateErrorMessageIfFileIsTooLarge()
         }
     }
 
@@ -284,7 +323,10 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun sendMessage(status: ConnectivityObserver.Status) {
+    private fun sendMessage(
+        status: ConnectivityObserver.Status,
+        fileUris: List<String>
+    ) {
         var isNewChat = false
         if (_selectedTopicId.value.isEmpty()) {
             _selectedTopicId.value = generateRandomId()
@@ -294,19 +336,23 @@ class ChatViewModel @Inject constructor(
         _cancellableCoroutineScope.value = viewModelScope.launch {
             withContext(coroutineDispatcher) {
                 val messageToSend = message.value.trim()
+                val messageWrapper = MessageWrapper(
+                    message = messageToSend,
+                    fileUris = fileUris
+                )
                 val topicIdToSend = _selectedTopicId.value
                 val isConnectedToInternet = status == ConnectivityObserver.Status.Available
 
                 val responseFlow = when (aiType.value) {
                     AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
-                        message = messageToSend,
+                        message = messageWrapper,
                         isNewChat = isNewChat,
                         isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend
                     )
 
                     else -> chatRepository.getAndStoreOpenAiChatResponse(
-                        message = messageToSend,
+                        message = messageWrapper,
                         isNewChat = isNewChat,
                         isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend,
@@ -328,6 +374,7 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+        _selectedFiles.value = mutableListOf()
     }
 
     private fun appendToMessageQueue(messageInfo: GenericMessageInfo.Builder) {
@@ -352,5 +399,12 @@ class ChatViewModel @Inject constructor(
         } catch (ex: Exception) {
             Log.e("removeMessage", ex.toString())
         }
+    }
+
+    private suspend fun updateErrorMessageIfFileIsTooLarge() {
+//        val fileSize = _selectedFiles.value.mapNotNull { it.getFileByteArray().size / (1024.0 * 1024.0) }.sum()
+//        val previousErrorMessage = errorMessage.value
+//        if(fileSize > 20) _errorMessage.value =
+//            UiText.StringResource(string.file_cannot_be_larger_than_20mb) else previousErrorMessage
     }
 }

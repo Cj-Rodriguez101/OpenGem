@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -96,9 +97,12 @@ import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
+import com.darkrockstudios.libraries.mpfilepicker.FilePicker
+import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,6 +114,7 @@ fun ChatScreen(
     status: ConnectivityObserver.Status,
     message: String,
     topicTitle: String,
+    selectedFiles: List<MPFile<Any>>,
     recordingState: RecordingState,
     shouldShowRecordingScreen: Boolean,
     imageZoomedInPath: String,
@@ -142,17 +147,29 @@ fun ChatScreen(
         ContextCompat.checkSelfPermission(context, permission.WRITE_EXTERNAL_STORAGE)
     val recordAudioLauncher = rememberLauncherForActivityResult(
         contract = RequestPermission(),
-        onResult = { isGranted ->
+        onResult = { _ ->
             onTriggerEvent(ChatListEvents.StartRecording)
             hasAlreadyCheckedForAudioPermission = true
         })
     val storageLauncher = rememberLauncherForActivityResult(
         contract = RequestPermission(),
-        onResult = { isGranted ->
+        onResult = { _ ->
             if (imageZoomedInPath.isEmpty()) return@rememberLauncherForActivityResult
-            onTriggerEvent(ChatListEvents.SaveFile(imageZoomedInPath))
+            onTriggerEvent(SaveFile(imageZoomedInPath))
             hasAlreadyCheckedForStoragePermission = true
         })
+
+    var showFilePicker by remember { mutableStateOf(false) }
+
+    val fileType = listOf("jpg", "png", "pdf")
+    FilePicker(show = showFilePicker, fileExtensions = fileType) { platformFile ->
+        platformFile?.let {
+            onTriggerEvent(ChatListEvents.AddImage(it))
+            val file = File(platformFile.path)
+            Log.e("fileis", file.absolutePath.toString())
+        }
+        showFilePicker = false
+    }
 
     LaunchedEffect(key1 = imeState.value) {
         if (imeState.value) {
@@ -401,8 +418,6 @@ fun ChatScreen(
                                                 })
                                         }
                                     }
-
-                                    //shouldShowScrollIcon.value = listState.canScrollBackward
                                 }
                                 if (isLoading) {
                                     LaunchedEffect(allChats.itemCount) { listState.scrollToItem(0) }
@@ -447,7 +462,7 @@ fun ChatScreen(
                                 updateMessage = { onTriggerEvent(ChatListEvents.SetMessage(it)) },
                                 shouldEnableTextField = shouldEnableTextField,
                                 sendMessage = {
-                                    onTriggerEvent(ChatListEvents.SendMessage(status))
+                                    onTriggerEvent(ChatListEvents.SendMessage(status, it))
                                     keyboardController?.hide()
                                 },
                                 cancelMessageGeneration = {
@@ -468,6 +483,13 @@ fun ChatScreen(
                                     }
                                     onTriggerEvent(ChatListEvents.SetShouldShowVoiceSegment(true))
                                 },
+                                uploadFile = {
+                                    showFilePicker = true
+                                },
+                                removeFile = {
+                                    onTriggerEvent(ChatListEvents.RemoveImage(it))
+                                },
+                                files = selectedFiles,
                                 modifier = Modifier
                                     .constrainAs(textField) {
                                         bottom.linkTo(if (shouldShowRecordingScreen) voiceRecord.top else parent.bottom)

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.R.string
+import com.darkrockstudios.libraries.mpfilepicker.MPFile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +46,18 @@ import com.cjrodriguez.cjchatgpt.R.string
 fun QuestionTextField(
     modifier: Modifier = Modifier,
     message: String = "",
+    files: List<MPFile<Any>> = listOf(),
     wordCount: Int = 0,
     upperLimit: Int = 500,
     errorMessage: String = "",
     isLoading: Boolean = false,
     shouldEnableTextField: Boolean = true,
-    sendMessage: () -> Unit = {},
+    sendMessage: (List<String>) -> Unit = {},
     cancelMessageGeneration: () -> Unit = {},
     openVoiceRecordingSegment: () -> Unit = {},
-    updateMessage: (String) -> Unit = {}
+    updateMessage: (String) -> Unit = {},
+    uploadFile: () -> Unit = {},
+    removeFile: (MPFile<Any>) -> Unit = {},
 ) {
 
     Column(
@@ -64,16 +69,30 @@ fun QuestionTextField(
             )
 
     ) {
+        Row {
+            files.forEach {
+                FileContainer(file = it, removeFile = { removeFile(it) })
+            }
+        }
         Row(
             modifier = Modifier
                 .border(
                     width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = MaterialTheme.shapes.extraLarge
                 )
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+//            IconButton(
+//                onClick = uploadFile
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.UploadFile,
+//                    contentDescription = stringResource(string.upload_file)
+//                )
+//            }
             OutlinedTextField(
                 value = message,
                 onValueChange = updateMessage,
@@ -84,28 +103,53 @@ fun QuestionTextField(
                     unfocusedBorderColor = Color.Transparent,
                 ),
                 trailingIcon = {
-                    if (errorMessage.isNotEmpty())
+                    Row {
+                        AnimatedVisibility(errorMessage.isNotEmpty()) {
+                            Icon(
+                                Icons.Filled.Error,
+                                stringResource(R.string.error),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        AnimatedVisibility(visible = shouldEnableTextField) {
+                            IconButton(
+                                onClick = openVoiceRecordingSegment,
+                                //modifier = Modifier.padding(end = 16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = stringResource(string.microphone)
+                                )
+                            }
+                        }
+                    }
+                },
+                leadingIcon = {
+                    IconButton(
+                        onClick = uploadFile
+                    ) {
                         Icon(
-                            Icons.Filled.Error,
-                            stringResource(R.string.error), tint = MaterialTheme.colorScheme.error
+                            imageVector = Icons.Default.UploadFile,
+                            contentDescription = stringResource(string.upload_file)
                         )
+                    }
                 },
                 modifier = Modifier
                     .heightIn(max = 200.dp)
-                    .fillMaxWidth(0.9f)
+                    .fillMaxWidth()
             )
 
-            AnimatedVisibility(visible = shouldEnableTextField) {
-                IconButton(
-                    onClick = openVoiceRecordingSegment,
-                    modifier = Modifier.padding(end = 16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = stringResource(string.microphone)
-                    )
-                }
-            }
+//            AnimatedVisibility(visible = shouldEnableTextField) {
+//                IconButton(
+//                    onClick = openVoiceRecordingSegment,
+//                    modifier = Modifier.padding(end = 16.dp)
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.Mic,
+//                        contentDescription = stringResource(string.microphone)
+//                    )
+//                }
+//            }
         }
 
         if (!isLoading) {
@@ -134,7 +178,11 @@ fun QuestionTextField(
                         )
                     }
 
-                    IconButton(onClick = sendMessage,
+                    IconButton(onClick = {
+                        sendMessage(
+                            files.map { it.path }
+                        )
+                    },
                         enabled = errorMessage.isEmpty() && message.trim()
                             .isNotEmpty() && !isLoading,
                         modifier = Modifier

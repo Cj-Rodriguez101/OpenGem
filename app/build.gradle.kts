@@ -67,6 +67,7 @@ kapt {
 }
 
 dependencies {
+    implementation(libs.filePicker)
     implementation(libs.zoomable)
     implementation(libs.markdown.image)
     implementation(libs.markdown.parser)

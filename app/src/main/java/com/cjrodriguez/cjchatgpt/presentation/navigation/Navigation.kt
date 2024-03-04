@@ -54,6 +54,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val recordingState by chatViewModel.recordingState.collectAsStateWithLifecycle()
             val powerLevel by chatViewModel.powerLevel.collectAsStateWithLifecycle()
             val allChats = chatViewModel.chatPagingFlow.collectAsLazyPagingItems()
+            val selectedFiles by chatViewModel.selectedFiles.collectAsStateWithLifecycle()
             ChatScreen(
                 selectedAiType = selectedAi,
                 allChats = allChats,
@@ -66,6 +67,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 messageSet = messageSet.toImmutableSet(),
                 topicTitle = topicTitle ?: "",
                 recordingState = recordingState,
+                selectedFiles = selectedFiles,
                 shouldShowRecordingScreen = shouldShowVoiceSegment,
                 circlePowerLevel = powerLevel,
                 imageZoomedInPath = imageZoomedInPath,

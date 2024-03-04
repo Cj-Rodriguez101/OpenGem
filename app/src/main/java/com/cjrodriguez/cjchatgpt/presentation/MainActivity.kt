@@ -23,4 +23,5 @@ class MainActivity : ComponentActivity() {
             Navigation(status)
         }
     }
+
 }

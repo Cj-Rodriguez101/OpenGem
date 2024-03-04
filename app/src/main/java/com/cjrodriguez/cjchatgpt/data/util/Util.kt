@@ -4,7 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
 import android.view.View.MeasureSpec
@@ -117,22 +120,24 @@ fun storeAndAppendTopic(
 
 fun storeAndAppendResponse(
     messageId: String,
-    it: String,
+    textToAppend: String,
     topicId: String,
     lastCreatedIndex: Int,
     modelId: String,
+    imageUrls: List<String> = listOf(),
     chatTopicDao: ChatTopicDao
 ) {
     val affectedRows =
-        chatTopicDao.appendTextToContentMessage(messageId, it)
+        chatTopicDao.appendTextToContentMessage(messageId, textToAppend)
 
     if (affectedRows == 0) {
         chatTopicDao.insertChatResponse(
             ChatEntity(
                 messageId = messageId,
                 topicId = topicId,
-                expandedContent = it,
+                expandedContent = textToAppend,
                 modelId = modelId,
+                imageUrls = imageUrls,
                 isUserGenerated = false,
                 lastCreatedIndex = lastCreatedIndex + 2
             )
@@ -181,33 +186,49 @@ fun storeImageInCache(
             layout(0,0, measuredWidth, measuredHeight)
         }
 
-        val bitmap = Bitmap.createBitmap(textView.measuredWidth, textView.measuredHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(
+            textView.measuredWidth,
+            textView.measuredHeight,
+            Bitmap.Config.ARGB_8888
+        )
         val canvas = Canvas(bitmap)
         textView.draw(canvas)
 
-        // Convert bitmap to byte array
         val stream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
         stream.toByteArray()
     }
     val imageTitle = if (isImageUrl) byteArray.toCustomString() else byteArray.toShortFileName()
+    return storeByteArrayToTemp(topicId, context, imageTitle, byteArray)
+}
+
+fun storeByteArrayToTemp(
+    topicId: String,
+    context: Context,
+    imageTitle: String,
+    byteArray: ByteArray?
+): String? {
     return try {
         val directoryPath = "images/$topicId"
         val imagesDir = File(context.getExternalFilesDir(directoryPath), "")
         if (!imagesDir.exists()) {
-            imagesDir.mkdirs() // Make sure the directory exists
+            imagesDir.mkdirs()
         }
-        context.contentResolver.openFileDescriptor(Uri
-            .fromFile(File(context.getExternalFilesDir(directoryPath)?.absolutePath
-                    + "/" + imageTitle + ".jpg")), "w")?.use {
+        context.contentResolver.openFileDescriptor(
+            Uri
+                .fromFile(
+                    File(
+                        context.getExternalFilesDir(directoryPath)?.absolutePath
+                                + "/" + imageTitle + ".jpg"
+                    )
+                ), "w"
+        )?.use {
             FileOutputStream(it.fileDescriptor).use {
                 it.write(
                     byteArray
                 )
             }
         }
-
-        //val imagesDir = File(context.getExternalFilesDir("images"), "")
         val imageFile = File(imagesDir, "$imageTitle.jpg")
         return Uri.fromFile(imageFile).toString()
 
@@ -229,4 +250,31 @@ suspend fun <T> getNewSummaryResponseFromModel(
     val previousChatMessages =
         chatTopicDao.getAllChatsFromTopicStartingAfterIndex(topicId, lastCreatedId)
     return getSummaryResponse(previousChatMessages)
+}
+
+fun String.determineContentType(urlPath: String): String {
+    return when {
+        "image" in urlPath -> "Image"
+        "document" in urlPath -> "Document"
+        else -> "Unknown"
+    }
+}
+
+fun createBitmapFromContentUri(context: Context, contentUri: String): Bitmap? {
+    val uri = Uri.parse(contentUri)
+    val bitmap = try {
+//        context.contentResolver.openInputStream(uri).use { inputStream ->
+//            BitmapFactory.decodeStream(inputStream)
+//        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+        } else {
+            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        }
+    } catch (e: Exception) {
+        Log.e("gemini", e.toString())
+        null
+    }
+    Log.e("bitmap", bitmap.toString())
+    return bitmap
 }

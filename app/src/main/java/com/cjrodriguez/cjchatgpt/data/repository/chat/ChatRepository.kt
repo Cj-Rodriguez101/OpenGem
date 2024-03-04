@@ -2,6 +2,7 @@ package com.cjrodriguez.cjchatgpt.data.repository.chat
 
 import androidx.paging.PagingData
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
+import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import kotlinx.coroutines.flow.Flow
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface ChatRepository {
 
     fun getAndStoreOpenAiChatResponse(
-        message: String,
+        message: MessageWrapper,
         isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean,
@@ -18,7 +19,7 @@ interface ChatRepository {
     ): Flow<DataState<String>>
 
     fun getAndStoreGeminiResponse(
-        message: String,
+        message: MessageWrapper,
         isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean

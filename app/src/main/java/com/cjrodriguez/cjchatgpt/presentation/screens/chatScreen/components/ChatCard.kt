@@ -1,5 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,7 +63,7 @@ fun ChatCard(
         topicId = "",
         isUserGenerated = false,
         content = "",
-        imageUrl = "",
+        imageUrls = listOf(),
         aiType = GPT3
     ),
     setSelectedImage: (String) -> Unit = {},
@@ -123,7 +125,7 @@ fun ChatCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 when {
-                    chat.imageUrl == LOADING -> {
+                    chat.imageUrls.contains(LOADING) -> {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .width(300.dp)
@@ -131,36 +133,41 @@ fun ChatCard(
                         )
                     }
 
-                    chat.imageUrl == ERROR -> {
+                    chat.imageUrls.contains(ERROR) -> {
                         Image(
                             painter = rememberVectorPainter(image = Icons.Default.Error),
                             contentDescription = stringResource(string.generated_image)
                         )
                     }
 
-                    chat.imageUrl != "" -> {
-                        SubcomposeAsyncImage(
-                            modifier = Modifier
-                                .width(300.dp)
-                                .height(300.dp)
-                                .padding(bottom = 8.dp)
-                                .clip(RoundedCornerShape(percent = 20))
-                                .clickable(onClick = {
-                                    //add check for if already expanded
-                                    setSelectedImage(chat.imageUrl)
-                                }),
-                            model = chat.imageUrl,
-                            loading = {
-                                CircularProgressIndicator()
-                            },
-                            error = {
-                                Image(
-                                    painter = rememberVectorPainter(image = Icons.Default.Error),
+                    chat.imageUrls.isNotEmpty() -> {
+                        Row {
+                            chat.imageUrls.forEachIndexed { index, url ->
+                                SubcomposeAsyncImage(
+                                    modifier = Modifier
+                                        .width(300.dp)
+                                        .height(300.dp)
+                                        .padding(bottom = 8.dp)
+                                        .offset((index * 5).dp)
+                                        .clip(MaterialTheme.shapes.extraLarge)
+                                        .clickable(onClick = {
+                                            //add check for if already expanded
+                                            setSelectedImage(url)
+                                        }),
+                                    model = url,
+                                    loading = {
+                                        CircularProgressIndicator()
+                                    },
+                                    error = {
+                                        Image(
+                                            painter = rememberVectorPainter(image = Icons.Default.Error),
+                                            contentDescription = stringResource(string.generated_image)
+                                        )
+                                    },
                                     contentDescription = stringResource(string.generated_image)
                                 )
-                            },
-                            contentDescription = stringResource(string.generated_image)
-                        )
+                            }
+                        }
                     }
 
                     else -> Unit

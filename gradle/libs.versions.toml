@@ -31,8 +31,10 @@ compose_markdown = "0.4.1"
 apache = "2.11.0"
 markwon = "4.6.2"
 zoom = "1.6.0"
+picker = "3.1.0"
 
 [libraries]
+filePicker = { group = "com.darkrockstudios", name = "mpfilepicker", version.ref = "picker" }
 zoomable = { group = "net.engawapg.lib", name = "zoomable", version.ref = "zoom" }
 markdown-image = { group = "io.noties.markwon", name = "image", version.ref = "markwon" }
 markdown-parser = { group = "io.noties.markwon", name = "core", version.ref = "markwon"}

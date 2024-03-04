@@ -31,4 +31,7 @@
   <string name="failed_to_save_image">Failed to save image</string>
   <string name="successfully_saved_picture">Successfully saved picture</string>
   <string name="you_need_permission_to_save_picture">You need permission to save picture</string>
+  <string name="upload_file">Upload File</string>
+  <string name="remove_file">Remove file</string>
+  <string name="file_cannot_be_larger_than_20mb">File cannot be larger than 20mb</string>
 </resources>

@@ -12,7 +12,7 @@ fun ChatEntity.toChat(): Chat {
         topicId = this.topicId,
         content = this.expandedContent,//.transformTextToHtml().dividePlainHtmlAndCode(),
         isUserGenerated = this.isUserGenerated,
-        imageUrl = this.imageUrl,
+        imageUrls = this.imageUrls,
         aiType = AiType.fromModelName(this.modelId) ?: GPT3,
         lastCreatedIndex = this.lastCreatedIndex
     )

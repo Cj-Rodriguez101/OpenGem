@@ -2,11 +2,15 @@ package com.cjrodriguez.cjchatgpt.domain.events
 
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
+import com.darkrockstudios.libraries.mpfilepicker.MPFile
 
 sealed class ChatListEvents {
 
     data class SetGptVersion(val aiType: AiType) : ChatListEvents()
-    data class SendMessage(val isCurrentlyConnectedToInternet: ConnectivityObserver.Status) :
+    data class SendMessage(
+        val isCurrentlyConnectedToInternet: ConnectivityObserver.Status,
+        val fileUris: List<String>
+    ) :
         ChatListEvents()
 
     data class SetRecordingState(val isRecordingState: Boolean) : ChatListEvents()
@@ -15,6 +19,8 @@ sealed class ChatListEvents {
 
     object NewChat : ChatListEvents()
     data class CopyTextToClipBoard(val messageToCopy: String) : ChatListEvents()
+    data class AddImage(val messageToCopy: MPFile<Any>) : ChatListEvents()
+    data class RemoveImage(val messageToCopy: MPFile<Any>) : ChatListEvents()
     object CancelChatGeneration : ChatListEvents()
     object RemoveHeadMessage : ChatListEvents()
     object StartRecording : ChatListEvents()

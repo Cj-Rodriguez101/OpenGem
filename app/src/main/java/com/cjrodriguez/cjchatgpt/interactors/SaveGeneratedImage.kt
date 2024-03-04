@@ -38,8 +38,8 @@ class SaveGeneratedImage @Inject constructor(
         try {
             emit(DataState.loading())
             val uri = Uri.parse(imagePath)
-            val filePath = uri.path // This gives you the file path from the Uri
-            var fos: OutputStream? = null
+            val filePath = uri.path
+            val fos: OutputStream?
             if (VERSION.SDK_INT >= VERSION_CODES.Q) {
                 val resolver: ContentResolver = context.contentResolver
                 val contentValues = ContentValues()
@@ -59,7 +59,6 @@ class SaveGeneratedImage @Inject constructor(
             fos?.use {
                 bitmap?.compress(JPEG, 100, fos)
             }
-            fos?.close()
             emit(
                 DataState.data(
                     data = "Success", message = GenericMessageInfo.Builder()
