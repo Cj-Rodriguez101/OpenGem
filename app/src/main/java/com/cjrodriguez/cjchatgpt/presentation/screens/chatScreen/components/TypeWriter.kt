@@ -24,24 +24,6 @@ fun AnimateTypewriterText(baseText: String, highlightText: String, parts: List<S
     val textToDisplay = "$partText$baseText"
     var selectedPartRects by remember { mutableStateOf(listOf<Rect>()) }
 
-//    LaunchedEffect(key1 = parts) {
-//        while (partIndex <= parts.size) {
-//            val part = parts[partIndex]
-//            part.forEachIndexed { charIndex, _ ->
-//                partText = part.substring(startIndex = 0, endIndex = charIndex + 1)
-//                delay(100)
-//            }
-//            delay(1000)
-//            part.forEachIndexed { charIndex, _ ->
-//                partText = part
-//                    .substring(startIndex = 0, endIndex = part.length - (charIndex + 1))
-//                delay(30)
-//            }
-//            delay(500)
-//            partIndex = (partIndex + 1) % parts.size
-//        }
-//    }
-
     LaunchedEffect(key1 = parts) {
         for (partIndex in parts.indices) {
             val part = parts[partIndex]
@@ -61,20 +43,6 @@ fun AnimateTypewriterText(baseText: String, highlightText: String, parts: List<S
     Text(
         text = textToDisplay,
         fontSize = 40.sp,
-        //style = AppTheme.typography.introHeaderTextStyle,
-        //color = colors.textPrimary,
-//        modifier = Modifier.drawBehind {
-//            val borderSize = 20.sp.toPx()
-//            selectedPartRects.forEach { rect ->
-//                val selectedRect = rect.translate(0f, -borderSize / 1.5f)
-//                drawLine(
-//                    color = Color(0x408559DA),
-//                    start = Offset(selectedRect.left, selectedRect.bottom),
-//                    end = selectedRect.bottomRight,
-//                    strokeWidth = borderSize
-//                )
-//            }
-//        },
         onTextLayout = { layoutResult ->
             val start = baseText.length
             val end = textToDisplay.count()

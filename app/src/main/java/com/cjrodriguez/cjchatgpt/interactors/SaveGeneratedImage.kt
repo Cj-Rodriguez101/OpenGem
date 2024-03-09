@@ -3,7 +3,6 @@ package com.cjrodriguez.cjchatgpt.interactors
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.BitmapFactory
@@ -14,7 +13,6 @@ import android.os.Build.VERSION_CODES
 import android.os.Environment
 import android.provider.MediaStore.Images.Media
 import android.provider.MediaStore.MediaColumns
-import android.util.Log
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId

@@ -2,7 +2,7 @@ package com.cjrodriguez.cjchatgpt.data.util
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Canvas
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -21,7 +21,6 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.net.URL
 
 const val GPT_3 = "GPT3"
@@ -36,10 +35,12 @@ const val SUCCESS = "success"
 const val LOADING = "LOADING"
 const val ERROR = "ERROR"
 const val PASSWORD = "password"
-const val SUMMARIZE_PROMPT = "Summarize this message to 5 words max and no special symbols just plain text"
+const val SUMMARIZE_PROMPT =
+    "Summarize this message to 5 words max and no special symbols just plain text"
 const val SUMMARIZE_HISTORY_PROMPT = "Summarize this chat history as short as possible " +
         "and keep the key points so I can use for future chats"
-const val CHAT_HISTORY_REFER_PROMPT = "Use this history to get about the previous chats on the same thread:"
+const val CHAT_HISTORY_REFER_PROMPT =
+    "Use this history to get about the previous chats on the same thread:"
 const val THE_REAL_PROMPT_IS = "Then the real prompt is"
 
 fun String.toByteArrayCustom(): ByteArray {
@@ -145,7 +146,7 @@ fun storeAndAppendResponse(
     }
 }
 
-private fun convertImageUrlToByteArray(imageUrl: String): ByteArray{
+private fun convertImageUrlToByteArray(imageUrl: String): ByteArray {
     val url = URL(imageUrl)
     val inputStream = url.openStream()
     return org.apache.commons.io.IOUtils.toByteArray(inputStream)
@@ -166,9 +167,9 @@ fun storeImageInCache(
     imageUrl: String,
     isImageUrl: Boolean = true,
     topicId: String,
-    context:Context
-): String?{
-    val byteArray = if (isImageUrl){
+    context: Context
+): String? {
+    val byteArray = if (isImageUrl) {
         convertImageUrlToByteArray(imageUrl)
     } else {
         val markwon = Markwon.builder(context).usePlugin(ImagesPlugin.create()).build()
@@ -183,7 +184,7 @@ fun storeImageInCache(
                 MeasureSpec.makeMeasureSpec(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED),
                 MeasureSpec.makeMeasureSpec(MeasureSpec.UNSPECIFIED, MeasureSpec.UNSPECIFIED),
             )
-            layout(0,0, measuredWidth, measuredHeight)
+            layout(0, 0, measuredWidth, measuredHeight)
         }
 
         val bitmap = Bitmap.createBitmap(
@@ -200,6 +201,25 @@ fun storeImageInCache(
     }
     val imageTitle = if (isImageUrl) byteArray.toCustomString() else byteArray.toShortFileName()
     return storeByteArrayToTemp(topicId, context, imageTitle, byteArray)
+}
+
+fun storeInTempFolderAndReturnUrl(
+    bitmap: Bitmap,
+    topicId: String,
+    context: Context,
+): String? {
+    ByteArrayOutputStream().use { stream ->
+        bitmap.compress(JPEG, 100, stream)
+        val byteArray = stream.toByteArray() ?: return null
+        val customName = byteArray.toCustomString()
+        val fileName = customName.ifEmpty { generateRandomId() }
+        return storeByteArrayToTemp(
+            topicId = topicId,
+            context = context,
+            imageTitle = fileName,
+            byteArray = byteArray
+        )
+    }
 }
 
 fun storeByteArrayToTemp(
@@ -263,9 +283,6 @@ fun String.determineContentType(urlPath: String): String {
 fun createBitmapFromContentUri(context: Context, contentUri: String): Bitmap? {
     val uri = Uri.parse(contentUri)
     val bitmap = try {
-//        context.contentResolver.openInputStream(uri).use { inputStream ->
-//            BitmapFactory.decodeStream(inputStream)
-//        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
         } else {
@@ -275,6 +292,5 @@ fun createBitmapFromContentUri(context: Context, contentUri: String): Bitmap? {
         Log.e("gemini", e.toString())
         null
     }
-    Log.e("bitmap", bitmap.toString())
     return bitmap
 }

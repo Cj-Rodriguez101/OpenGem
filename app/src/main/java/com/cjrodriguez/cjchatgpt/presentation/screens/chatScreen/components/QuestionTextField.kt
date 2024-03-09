@@ -11,11 +11,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,14 +85,6 @@ fun QuestionTextField(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-//            IconButton(
-//                onClick = uploadFile
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.UploadFile,
-//                    contentDescription = stringResource(string.upload_file)
-//                )
-//            }
             OutlinedTextField(
                 value = message,
                 onValueChange = updateMessage,
@@ -114,7 +106,6 @@ fun QuestionTextField(
                         AnimatedVisibility(visible = shouldEnableTextField) {
                             IconButton(
                                 onClick = openVoiceRecordingSegment,
-                                //modifier = Modifier.padding(end = 16.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Mic,
@@ -129,7 +120,7 @@ fun QuestionTextField(
                         onClick = uploadFile
                     ) {
                         Icon(
-                            imageVector = Icons.Default.UploadFile,
+                            imageVector = Icons.Default.AttachFile,
                             contentDescription = stringResource(string.upload_file)
                         )
                     }
@@ -138,18 +129,6 @@ fun QuestionTextField(
                     .heightIn(max = 200.dp)
                     .fillMaxWidth()
             )
-
-//            AnimatedVisibility(visible = shouldEnableTextField) {
-//                IconButton(
-//                    onClick = openVoiceRecordingSegment,
-//                    modifier = Modifier.padding(end = 16.dp)
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Default.Mic,
-//                        contentDescription = stringResource(string.microphone)
-//                    )
-//                }
-//            }
         }
 
         if (!isLoading) {

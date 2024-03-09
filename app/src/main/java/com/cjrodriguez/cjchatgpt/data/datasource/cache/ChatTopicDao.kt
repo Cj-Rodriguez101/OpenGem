@@ -54,9 +54,6 @@ interface ChatTopicDao {
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
     fun appendTextToTopicTitle(topicId: String, textToAppend: String): Int
 
-//    @Query("UPDATE summaryTable SET content = content || :textToAppend WHERE topicId = :topicId")
-//    fun appendTextToSummary(topicId: String, textToAppend: String): Int
-
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId AND messageId =:messageId ORDER BY lastCreatedIndex DESC LIMIT 1")
     fun getSpecificChat(topicId: String, messageId: String): ChatEntity?
 

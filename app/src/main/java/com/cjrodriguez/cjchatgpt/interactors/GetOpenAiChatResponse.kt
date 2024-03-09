@@ -3,7 +3,6 @@ package com.cjrodriguez.cjchatgpt.interactors
 import android.content.Context
 import android.graphics.Bitmap
 import android.util.Base64
-import android.util.Log
 import com.aallam.openai.api.chat.ChatCompletion
 import com.aallam.openai.api.chat.ChatCompletionChunk
 import com.aallam.openai.api.chat.ChatCompletionRequest
@@ -29,9 +28,8 @@ import com.cjrodriguez.cjchatgpt.data.util.createBitmapFromContentUri
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
-import com.cjrodriguez.cjchatgpt.data.util.storeByteArrayToTemp
 import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
-import com.cjrodriguez.cjchatgpt.data.util.toCustomString
+import com.cjrodriguez.cjchatgpt.data.util.storeInTempFolderAndReturnUrl
 import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
@@ -64,8 +62,6 @@ class GetOpenAiChatResponse @Inject constructor(
         emit(DataState.loading())
         var errorMessage = ""
         var requestMessageId = ""
-        val modifiedModel =
-            if (messageWrapper.fileUris.isNotEmpty()) "gpt-4-vision-preview" else model
 
         try {
             if (!isCurrentlyConnectedToInternet) {
@@ -84,70 +80,40 @@ class GetOpenAiChatResponse @Inject constructor(
                 )
                 return@flow
             }
+            val bitmapList: List<Bitmap> = messageWrapper.fileUris.mapNotNull {
+                createBitmapFromContentUri(context, it)
+            }
+            val modifiedModel =
+                if (messageWrapper.fileUris.isNotEmpty()) "gpt-4-vision-preview" else model
             val shouldGenerateImage = shouldTriggerImageModel(message)
             val textResponseFlow = when {
                 shouldGenerateImage -> null
                 isNewChat -> getOpenAiResponseFlow(
+                    bitmapList = bitmapList,
                     messageWrapper = messageWrapper,
                     model = modifiedModel
                 )
 
                 else -> {
-                    val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
-                    val contentList: MutableList<ChatMessage> = mutableListOf()
-                    history.map {
-                        if (it.imageUrls.isNotEmpty()) {
-                            contentList.add(
-                                ChatMessage(
-                                    role = ChatRole.User,
-                                    content = it.expandedContent
-                                )
-                            )
-                            contentList.add(
-                                ChatMessage(
-                                    role = ChatRole.System,
-                                    content = "The image created was found here ${it.imageUrls}"
-                                )
-                            )
-                        } else {
-                            contentList.add(
-                                ChatMessage(
-                                    role = if (it.isUserGenerated) ChatRole.User else ChatRole.System,
-                                    content = it.expandedContent
-                                )
-                            )
-                        }
-                    }
-                    getOpenAiResponseFlow(contentList, messageWrapper, modifiedModel)
-//                    chatTopicDao.getSummaryItemBasedOnTopic(topicId)?.let { summaryEntity ->
-//                        getOpenAiResponseFlow(
-//                            "$CHAT_HISTORY_REFER_PROMPT \"${(summaryEntity.content).toCustomString()}\" " +
-//                                    "$THE_REAL_PROMPT_IS  \"$message\"",
-//                            model
-//                        )
-//                    } ?: getOpenAiResponseFlow(message, model)
+                    val contentList: MutableList<ChatMessage> = loadHistoryToOpenAi(topicId)
+                    getOpenAiResponseFlow(
+                        history = contentList,
+                        bitmapList = bitmapList,
+                        messageWrapper = messageWrapper,
+                        model = modifiedModel
+                    )
                 }
             }
 
             requestMessageId = generateRandomId()
             val responseMessageId = generateRandomId()
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
-            val fileUrls: MutableList<String> = mutableListOf()
-            if (messageWrapper.fileUris.isNotEmpty()) {
-                messageWrapper.fileUris.map {
-                    createBitmapFromContentUri(context, it)?.let { bitmap ->
-                        val stream = java.io.ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
-                        val byteArray = stream.toByteArray() ?: return@let
-                        val url = storeByteArrayToTemp(
-                            topicId = topicId,
-                            context = context,
-                            imageTitle = byteArray.toCustomString(),
-                            byteArray = byteArray
-                        ) ?: return@let
-                        fileUrls.add(url)
-                    }
-                }
+            val fileUrls = bitmapList.mapNotNull { bitmap ->
+                storeInTempFolderAndReturnUrl(
+                    bitmap,
+                    topicId,
+                    context
+                )
             }
 
             chatTopicDao.insertChatResponse(
@@ -206,15 +172,6 @@ class GetOpenAiChatResponse @Inject constructor(
                                 messageId = requestMessageId,
                                 imageUrl = images
                             )
-//                            val image = storeImageInCache(
-//                                imageUrl = imageUrls[0].url,
-//                                context = context,
-//                                topicId = topicId
-//                            )
-//                            chatTopicDao.updateImageUrl(
-//                                messageId = requestMessageId,
-//                                imageUrl = image ?: ERROR
-//                            )
                         }
                     }
                 }
@@ -222,12 +179,12 @@ class GetOpenAiChatResponse @Inject constructor(
                 if (isNewChat) {
                     val topicFlow =
                         getOpenAiResponseFlow(
-                            listOf(),
-                            MessageWrapper(
+                            history = listOf(),
+                            messageWrapper = MessageWrapper(
                                 message = "$SUMMARIZE_PROMPT $message",
                                 fileUris = listOf()
                             ),
-                            "gpt-3.5-turbo"
+                            model = "gpt-3.5-turbo"
                         )
                     val topicJob = async {
                         ensureActive()
@@ -243,43 +200,9 @@ class GetOpenAiChatResponse @Inject constructor(
                     }
 
                     errorMessage = tryCatch(awaitAll(messageJob, topicJob))
-//                    val summary = getNewSummaryResponseFromModel(
-//                        topicId,
-//                        0,
-//                        chatTopicDao
-//                    ) { getSummarizedOpenAiResponseFlow(it) }
-//                    summary.choices[0].message.content?.let {
-//                        Log.e("openai", "new summary \n $it")
-//                        chatTopicDao.insertSummaryResponse(
-//                            SummaryEntity(
-//                                topicId = topicId,
-//                                content = it.toByteArrayCustom()
-//                            )
-//                        )
-//                    }
                 } else {
                     errorMessage = tryCatch(messageJob.await())
-//                    val lastCreatedId = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
-//                    val summary = getNewSummaryResponseFromModel(
-//                        topicId,
-//                        lastCreatedId,
-//                        chatTopicDao
-//                    ) { if (!shouldGenerateImage) getSummarizedOpenAiResponseFlow(it) else null }
-//                    summary?.choices?.get(0)?.message?.content.let {
-//                        val summaryInCache =
-//                            chatTopicDao.getSummaryItemBasedOnTopic(topicId) ?: return@let
-//                        val decryptedString =
-//                            (summaryInCache.content).toCustomString() + " ${it ?: "An image created using this prompt $message"}"
-//                        chatTopicDao.insertSummaryResponse(
-//                            summaryInCache
-//                                .copy(
-//                                    content = decryptedString.toByteArrayCustom()
-//                                )
-//                        )
-//                    }
                 }
-//                if (shouldGenerateImage) chatTopicDao
-//                    .updateImageDescription(messageId, message)
             }
 
         } catch (ex: Exception) {
@@ -311,8 +234,38 @@ class GetOpenAiChatResponse @Inject constructor(
         }
     }
 
+    private fun loadHistoryToOpenAi(topicId: String): MutableList<ChatMessage> {
+        val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
+        val contentList: MutableList<ChatMessage> = mutableListOf()
+        history.map {
+            if (it.imageUrls.isNotEmpty()) {
+                contentList.add(
+                    ChatMessage(
+                        role = ChatRole.User,
+                        content = it.expandedContent
+                    )
+                )
+                contentList.add(
+                    ChatMessage(
+                        role = ChatRole.System,
+                        content = "The image created was found here ${it.imageUrls}"
+                    )
+                )
+            } else {
+                contentList.add(
+                    ChatMessage(
+                        role = if (it.isUserGenerated) ChatRole.User else ChatRole.System,
+                        content = it.expandedContent
+                    )
+                )
+            }
+        }
+        return contentList
+    }
+
     private suspend fun getOpenAiResponseFlow(
         history: List<ChatMessage> = listOf(),
+        bitmapList: List<Bitmap> = listOf(),
         messageWrapper: MessageWrapper,
         model: String
     ): Any {
@@ -321,29 +274,25 @@ class GetOpenAiChatResponse @Inject constructor(
             ChatMessage(
                 role = ChatRole.User,
                 content = mutableListOf<ContentPart>().apply {
-                    if (messageWrapper.fileUris.isNotEmpty()) {
-                        messageWrapper.fileUris.map {
-                            createBitmapFromContentUri(context, it)?.let { bitmap ->
-                                ByteArrayOutputStream()
-                                    .use { outputStream ->
-                                        bitmap.compress(
-                                            Bitmap.CompressFormat.PNG,
-                                            100,
-                                            outputStream
-                                        )
-                                        outputStream.toByteArray()?.let {
-                                            Base64.encodeToString(it, Base64.DEFAULT)
-                                                ?.let { encodedString ->
-                                                    add(
-                                                        ImagePart(
-                                                            url = "data:image/jpeg;base64,$encodedString"
-                                                        )
-                                                    )
-                                                }
+                    bitmapList.mapNotNull { bitmap ->
+                        ByteArrayOutputStream()
+                            .use { outputStream ->
+                                bitmap.compress(
+                                    Bitmap.CompressFormat.JPEG,
+                                    100,
+                                    outputStream
+                                )
+                                outputStream.toByteArray()?.let {
+                                    Base64.encodeToString(it, Base64.DEFAULT)
+                                        ?.let { encodedString ->
+                                            add(
+                                                ImagePart(
+                                                    url = "data:image/jpeg;base64,$encodedString"
+                                                )
+                                            )
                                         }
-                                    }
+                                }
                             }
-                        }
                     }
                     add(TextPart(messageWrapper.message))
                 }.toList()
@@ -365,27 +314,6 @@ class GetOpenAiChatResponse @Inject constructor(
             )
         }
     }
-
-    private suspend fun getSummarizedOpenAiResponseFlow(
-        messages: List<ChatEntity>
-    ) = openApiConfig.openai.chatCompletion(
-        ChatCompletionRequest(
-            messages = messages.mapIndexed { index, chatEntity ->
-                if (index == 0) {
-                    ChatMessage(
-                        role = chatEntity.openAiChatRole.getChatRole(),
-                        SUMMARIZE_HISTORY_PROMPT + chatEntity.expandedContent
-                    )
-                } else {
-                    ChatMessage(
-                        role = chatEntity.openAiChatRole.getChatRole(),
-                        chatEntity.expandedContent
-                    )
-                }
-            },
-            model = ModelId("gpt-3.5-turbo")
-        )
-    )
 
     private suspend fun getImageFromOpenAiPrompt(prompt: String): List<ImageURL> {
         return openApiConfig.openai.imageURL(

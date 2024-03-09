@@ -38,7 +38,12 @@ fun GenericDialog(
             onDismiss?.invoke()
             onRemoveHeadFromQueue()
         },
-        title = { Text(title, fontSize = 14.sp) },
+        title = {
+            Text(
+                title,
+                fontSize = 14.sp
+            )
+        },
         text = {
             if (description != null) {
                 Text(text = description)

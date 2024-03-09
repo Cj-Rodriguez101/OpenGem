@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -102,7 +101,6 @@ import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,11 +160,12 @@ fun ChatScreen(
     var showFilePicker by remember { mutableStateOf(false) }
 
     val fileType = listOf("jpg", "png", "pdf")
-    FilePicker(show = showFilePicker, fileExtensions = fileType) { platformFile ->
+    FilePicker(
+        show = showFilePicker,
+        fileExtensions = fileType
+    ) { platformFile ->
         platformFile?.let {
             onTriggerEvent(ChatListEvents.AddImage(it))
-            val file = File(platformFile.path)
-            Log.e("fileis", file.absolutePath.toString())
         }
         showFilePicker = false
     }
@@ -470,7 +469,6 @@ fun ChatScreen(
                                 },
                                 openVoiceRecordingSegment = {
                                     if (audioPermissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                                        //start listening
                                         onTriggerEvent(ChatListEvents.StartRecording)
                                     } else if (!hasAlreadyCheckedForAudioPermission) {
                                         recordAudioLauncher.launch(permission.RECORD_AUDIO)

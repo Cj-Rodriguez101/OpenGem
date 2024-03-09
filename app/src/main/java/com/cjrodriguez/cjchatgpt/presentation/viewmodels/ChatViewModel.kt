@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.cjrodriguez.cjchatgpt.R
-import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
@@ -175,7 +174,10 @@ class ChatViewModel @Inject constructor(
             }
 
             is SendMessage -> {
-                sendMessage(events.isCurrentlyConnectedToInternet, events.fileUris)
+                sendMessage(
+                    events.isCurrentlyConnectedToInternet,
+                    events.fileUris
+                )
             }
 
             is AddImage -> {

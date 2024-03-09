@@ -131,8 +131,6 @@ fun VoiceRecordingSegment(
                             center = Offset(x = center.x, y = center.y - 25.dp.toPx()),
                             radius = animatedRadius
                         )
-
-//                        Log.e("circle", "size ${circlePowerLevel}")
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = stopListening) {

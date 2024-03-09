@@ -46,6 +46,7 @@ fun DeleteDialog(
                     .padding(16.dp),
                 text = "Are You Sure You Want To Delete This Chat?",
                 textAlign = TextAlign.Justify,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp
             )
             Row(
