@@ -22,12 +22,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.cjrodriguez.cjchatgpt.R.string
-import com.darkrockstudios.libraries.mpfilepicker.MPFile
 
 @Composable
 fun FileContainer(
-    file: MPFile<Any>,
-    removeFile: (MPFile<Any>) -> Unit = {}
+    uri: Uri,
+    removeFile: (Uri) -> Unit = {}
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -44,7 +43,7 @@ fun FileContainer(
                 .fillMaxSize()
                 .align(Companion.CenterStart)
                 .padding(8.dp),
-            model = Uri.parse(file.path),
+            model = uri,
             contentDescription = stringResource(id = string.generated_image),
             placeholder = rememberVectorPainter(image = Icons.Default.PictureAsPdf),
             error = rememberVectorPainter(image = Icons.Default.PictureAsPdf)
@@ -53,7 +52,7 @@ fun FileContainer(
         IconButton(
             modifier = Modifier.align(Companion.TopEnd),
             onClick = {
-                removeFile(file)
+                removeFile(uri)
             }) {
             Icon(
                 imageVector = Icons.Default.Close,

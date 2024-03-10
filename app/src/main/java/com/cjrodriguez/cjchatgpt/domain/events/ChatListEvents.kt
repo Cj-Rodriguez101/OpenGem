@@ -1,8 +1,8 @@
 package com.cjrodriguez.cjchatgpt.domain.events
 
+import android.net.Uri
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
-import com.darkrockstudios.libraries.mpfilepicker.MPFile
 
 sealed class ChatListEvents {
 
@@ -19,8 +19,8 @@ sealed class ChatListEvents {
 
     object NewChat : ChatListEvents()
     data class CopyTextToClipBoard(val messageToCopy: String) : ChatListEvents()
-    data class AddImage(val messageToCopy: MPFile<Any>) : ChatListEvents()
-    data class RemoveImage(val messageToCopy: MPFile<Any>) : ChatListEvents()
+    data class AddImage(val messagesToCopy: List<Uri>) : ChatListEvents()
+    data class RemoveImage(val messageToCopy: Uri) : ChatListEvents()
     object CancelChatGeneration : ChatListEvents()
     object RemoveHeadMessage : ChatListEvents()
     object StartRecording : ChatListEvents()

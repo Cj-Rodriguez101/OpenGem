@@ -67,7 +67,6 @@ kapt {
 }
 
 dependencies {
-    implementation(libs.filePicker)
     implementation(libs.zoomable)
     implementation(libs.markdown.image)
     implementation(libs.markdown.parser)
@@ -92,7 +91,6 @@ dependencies {
     implementation(libs.immutable)
 
     //open ai & ktor
-//    implementation(platform(libs.client.bom))
     implementation(libs.ai.client)
     runtimeOnly(libs.ktor)
     testImplementation(libs.junit)

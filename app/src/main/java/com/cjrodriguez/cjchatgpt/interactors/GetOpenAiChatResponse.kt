@@ -80,33 +80,15 @@ class GetOpenAiChatResponse @Inject constructor(
                 )
                 return@flow
             }
+            requestMessageId = generateRandomId()
+            val responseMessageId = generateRandomId()
             val bitmapList: List<Bitmap> = messageWrapper.fileUris.mapNotNull {
                 createBitmapFromContentUri(context, it)
             }
             val modifiedModel =
                 if (messageWrapper.fileUris.isNotEmpty()) "gpt-4-vision-preview" else model
             val shouldGenerateImage = shouldTriggerImageModel(message)
-            val textResponseFlow = when {
-                shouldGenerateImage -> null
-                isNewChat -> getOpenAiResponseFlow(
-                    bitmapList = bitmapList,
-                    messageWrapper = messageWrapper,
-                    model = modifiedModel
-                )
 
-                else -> {
-                    val contentList: MutableList<ChatMessage> = loadHistoryToOpenAi(topicId)
-                    getOpenAiResponseFlow(
-                        history = contentList,
-                        bitmapList = bitmapList,
-                        messageWrapper = messageWrapper,
-                        model = modifiedModel
-                    )
-                }
-            }
-
-            requestMessageId = generateRandomId()
-            val responseMessageId = generateRandomId()
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
             val fileUrls = bitmapList.mapNotNull { bitmap ->
                 storeInTempFolderAndReturnUrl(
@@ -131,6 +113,24 @@ class GetOpenAiChatResponse @Inject constructor(
                     lastCreatedIndex = lastCreatedIndex + 1
                 )
             )
+            val textResponseFlow = when {
+                shouldGenerateImage -> null
+                isNewChat -> getOpenAiResponseFlow(
+                    bitmapList = bitmapList,
+                    messageWrapper = messageWrapper,
+                    model = modifiedModel
+                )
+
+                else -> {
+                    val contentList: MutableList<ChatMessage> = loadHistoryToOpenAi(topicId)
+                    getOpenAiResponseFlow(
+                        history = contentList,
+                        bitmapList = bitmapList,
+                        messageWrapper = messageWrapper,
+                        model = modifiedModel
+                    )
+                }
+            }
 
             coroutineScope {
                 val messageJob = async {
@@ -274,6 +274,7 @@ class GetOpenAiChatResponse @Inject constructor(
             ChatMessage(
                 role = ChatRole.User,
                 content = mutableListOf<ContentPart>().apply {
+                    add(TextPart(messageWrapper.message))
                     bitmapList.mapNotNull { bitmap ->
                         ByteArrayOutputStream()
                             .use { outputStream ->
@@ -294,7 +295,7 @@ class GetOpenAiChatResponse @Inject constructor(
                                 }
                             }
                     }
-                    add(TextPart(messageWrapper.message))
+                    //add(TextPart(messageWrapper.message))
                 }.toList()
             )
         )

@@ -3,12 +3,16 @@ package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 import android.Manifest.permission
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -96,8 +100,6 @@ import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
-import com.darkrockstudios.libraries.mpfilepicker.FilePicker
-import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.coroutines.launch
@@ -112,7 +114,7 @@ fun ChatScreen(
     status: ConnectivityObserver.Status,
     message: String,
     topicTitle: String,
-    selectedFiles: List<MPFile<Any>>,
+    selectedFiles: List<Uri>,
     recordingState: RecordingState,
     shouldShowRecordingScreen: Boolean,
     imageZoomedInPath: String,
@@ -124,6 +126,7 @@ fun ChatScreen(
     navigateToHistoryScreen: (String) -> Unit,
     onTriggerEvent: (ChatListEvents) -> Unit
 ) {
+    val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -136,7 +139,6 @@ fun ChatScreen(
     }
     val imeState = rememberImeState()
     val scrollState = rememberScrollState()
-    val context = LocalContext.current
     var hasAlreadyCheckedForAudioPermission by rememberSaveable { mutableStateOf(false) }
     var hasAlreadyCheckedForStoragePermission by rememberSaveable { mutableStateOf(false) }
     val audioPermissionCheckResult =
@@ -157,17 +159,10 @@ fun ChatScreen(
             hasAlreadyCheckedForStoragePermission = true
         })
 
-    var showFilePicker by remember { mutableStateOf(false) }
-
-    val fileType = listOf("jpg", "png", "pdf")
-    FilePicker(
-        show = showFilePicker,
-        fileExtensions = fileType
-    ) { platformFile ->
-        platformFile?.let {
-            onTriggerEvent(ChatListEvents.AddImage(it))
-        }
-        showFilePicker = false
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) {
+        onTriggerEvent(ChatListEvents.AddImage(it))
     }
 
     LaunchedEffect(key1 = imeState.value) {
@@ -482,7 +477,9 @@ fun ChatScreen(
                                     onTriggerEvent(ChatListEvents.SetShouldShowVoiceSegment(true))
                                 },
                                 uploadFile = {
-                                    showFilePicker = true
+                                    imagePickerLauncher.launch(
+                                        PickVisualMediaRequest(mediaType = ImageOnly)
+                                    )
                                 },
                                 removeFile = {
                                     onTriggerEvent(ChatListEvents.RemoveImage(it))

@@ -34,4 +34,5 @@
   <string name="upload_file">Upload File</string>
   <string name="remove_file">Remove file</string>
   <string name="file_cannot_be_larger_than_20mb">File cannot be larger than 20mb</string>
+  <string name="create_image_tip">Create Image Tip</string>
 </resources>

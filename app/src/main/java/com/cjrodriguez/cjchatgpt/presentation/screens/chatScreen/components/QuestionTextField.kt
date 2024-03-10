@@ -1,5 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +39,6 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.R.string
-import com.darkrockstudios.libraries.mpfilepicker.MPFile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +46,7 @@ import com.darkrockstudios.libraries.mpfilepicker.MPFile
 fun QuestionTextField(
     modifier: Modifier = Modifier,
     message: String = "",
-    files: List<MPFile<Any>> = listOf(),
+    files: List<Uri> = listOf(),
     wordCount: Int = 0,
     upperLimit: Int = 500,
     errorMessage: String = "",
@@ -57,7 +57,7 @@ fun QuestionTextField(
     openVoiceRecordingSegment: () -> Unit = {},
     updateMessage: (String) -> Unit = {},
     uploadFile: () -> Unit = {},
-    removeFile: (MPFile<Any>) -> Unit = {},
+    removeFile: (Uri) -> Unit = {},
 ) {
 
     Column(
@@ -71,7 +71,7 @@ fun QuestionTextField(
     ) {
         Row {
             files.forEach {
-                FileContainer(file = it, removeFile = { removeFile(it) })
+                FileContainer(uri = it, removeFile = { removeFile(it) })
             }
         }
         Row(
@@ -159,7 +159,7 @@ fun QuestionTextField(
 
                     IconButton(onClick = {
                         sendMessage(
-                            files.map { it.path }
+                            files.map { it.toString() }
                         )
                     },
                         enabled = errorMessage.isEmpty() && message.trim()

@@ -1,5 +1,6 @@
 package com.cjrodriguez.cjchatgpt.presentation.viewmodels
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,7 +37,6 @@ import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.ERROR
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.FINISHED
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.PROCESSING
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.RECORDING
-import com.darkrockstudios.libraries.mpfilepicker.MPFile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -74,7 +74,7 @@ class ChatViewModel @Inject constructor(
     private val _shouldShowRecordingScreen: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val shouldShowRecordingScreen = _shouldShowRecordingScreen.asStateFlow()
 
-    private val _selectedFiles: MutableStateFlow<MutableList<MPFile<Any>>> = MutableStateFlow(
+    private val _selectedFiles: MutableStateFlow<MutableList<Uri>> = MutableStateFlow(
         mutableListOf()
     )
     val selectedFiles = _selectedFiles.asStateFlow()
@@ -181,7 +181,7 @@ class ChatViewModel @Inject constructor(
             }
 
             is AddImage -> {
-                addImage(events.messageToCopy)
+                addImages(events.messagesToCopy)
             }
 
             is RemoveImage -> {
@@ -229,7 +229,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun removeImage(fileToRemove: MPFile<Any>) {
+    private fun removeImage(fileToRemove: Uri) {
         if (!_selectedFiles.value.contains(fileToRemove)) return
         viewModelScope.launch {
             _selectedFiles.update { currentFiles ->
@@ -239,15 +239,27 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun addImage(fileToAdd: MPFile<Any>) {
-        if (_selectedFiles.value.contains(fileToAdd)) return
+    private fun addImages(filesToAdd: List<Uri>) {
         viewModelScope.launch {
             _selectedFiles.update { currentFiles ->
-                currentFiles.toMutableList().apply { add(fileToAdd) }
+                val newFiles = filesToAdd.filter { fileToAdd ->
+                    !currentFiles.contains(fileToAdd)
+                }
+                currentFiles.toMutableList().apply { addAll(newFiles) }
             }
             updateErrorMessageIfFileIsTooLarge()
         }
     }
+
+//    private fun addImage(fileToAdd: MPFile<Any>) {
+//        if (_selectedFiles.value.contains(fileToAdd)) return
+//        viewModelScope.launch {
+//            _selectedFiles.update { currentFiles ->
+//                currentFiles.toMutableList().apply { add(fileToAdd) }
+//            }
+//            updateErrorMessageIfFileIsTooLarge()
+//        }
+//    }
 
     private fun saveFile(imagePath: String) {
         viewModelScope.launch {

@@ -69,6 +69,8 @@ class GetGeminiChatResponse @Inject constructor(
                 )
                 return@flow
             }
+            requestMessageId = generateRandomId()
+            val responseMessageId = generateRandomId()
             val bitmapList: List<Bitmap> = messageWrapper.fileUris.mapNotNull {
                 createBitmapFromContentUri(context, it)
             }
@@ -76,29 +78,6 @@ class GetGeminiChatResponse @Inject constructor(
             val geminiModel = geminiModelApi.getGenerativeModel(
                 if (messageWrapper.fileUris.isNotEmpty()) "gemini-pro-vision" else GEMINI.modelName
             )
-            val textResponseFlow = when {
-                shouldGenerateImage -> null
-                isNewChat -> {
-                    getGeminiResponseFlow(
-                        bitmapList = bitmapList,
-                        messageWrapper = messageWrapper,
-                        generativeModel = geminiModel
-                    )
-                }
-
-                else -> {
-                    val contentList: MutableList<Content> = loadHistoryToGemini(topicId)
-                    getGeminiResponseFlow(
-                        history = contentList,
-                        bitmapList = bitmapList,
-                        messageWrapper = messageWrapper,
-                        generativeModel = geminiModel
-                    )
-                }
-            }
-
-            requestMessageId = generateRandomId()
-            val responseMessageId = generateRandomId()
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
             val fileUrls = bitmapList.mapNotNull { bitmap ->
                 storeInTempFolderAndReturnUrl(
@@ -123,6 +102,26 @@ class GetGeminiChatResponse @Inject constructor(
                     modelId = GEMINI.modelName
                 )
             )
+            val textResponseFlow = when {
+                shouldGenerateImage -> null
+                isNewChat -> {
+                    getGeminiResponseFlow(
+                        bitmapList = bitmapList,
+                        messageWrapper = messageWrapper,
+                        generativeModel = geminiModel
+                    )
+                }
+
+                else -> {
+                    val contentList: MutableList<Content> = loadHistoryToGemini(topicId)
+                    getGeminiResponseFlow(
+                        history = contentList,
+                        bitmapList = bitmapList,
+                        messageWrapper = messageWrapper,
+                        generativeModel = geminiModel
+                    )
+                }
+            }
 
             coroutineScope {
                 val messageJob = async {
