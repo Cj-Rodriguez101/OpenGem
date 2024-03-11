@@ -236,8 +236,14 @@ class GetOpenAiChatResponse @Inject constructor(
 
     private fun loadHistoryToOpenAi(topicId: String): MutableList<ChatMessage> {
         val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
+        val index = history.indexOfLast { !it.isUserGenerated }
+        val mutableHistory = if (index == -1) {
+            listOf()
+        } else {
+            history.subList(0, index + 1)
+        }
         val contentList: MutableList<ChatMessage> = mutableListOf()
-        history.map {
+        mutableHistory.map {
             if (it.imageUrls.isNotEmpty()) {
                 contentList.add(
                     ChatMessage(

@@ -206,7 +206,7 @@ class GetGeminiChatResponse @Inject constructor(
                 )
             }
 
-            if (errorMessage.contains("multiturn")) {
+            if (errorMessage.isNotEmpty()) {
                 chatTopicDao.deleteMessageId(requestMessageId)
             }
             emit(
@@ -224,8 +224,14 @@ class GetGeminiChatResponse @Inject constructor(
 
     private fun loadHistoryToGemini(topicId: String): MutableList<Content> {
         val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
+        val index = history.indexOfLast { !it.isUserGenerated }
+        val mutableHistory = if (index == -1) {
+            listOf()
+        } else {
+            history.subList(0, index + 1)
+        }
         val contentList: MutableList<Content> = mutableListOf()
-        history.map {
+        mutableHistory.map {
             if (it.imageUrls.isNotEmpty()) {
                 contentList.add(content(role = "user") {
                     text(it.expandedContent)
