@@ -30,6 +30,7 @@ import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
 import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
 import com.cjrodriguez.cjchatgpt.data.util.storeInTempFolderAndReturnUrl
+import com.cjrodriguez.cjchatgpt.data.util.triggerHapticFeedback
 import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
@@ -149,6 +150,7 @@ class GetOpenAiChatResponse @Inject constructor(
                     }
                     (textResponseFlow as? Flow<ChatCompletionChunk>)?.collectLatest { chunk ->
                         chunk.choices[0].delta.content?.let {
+                            triggerHapticFeedback(context)
                             storeAndAppendResponse(
                                 messageId = responseMessageId,
                                 it,

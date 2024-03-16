@@ -1,12 +1,18 @@
 package com.cjrodriguez.cjchatgpt.data.util
 
 import android.content.Context
+import android.content.Context.VIBRATOR_SERVICE
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Canvas
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
+import android.os.Build.VERSION
+import android.os.Build.VERSION_CODES
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
@@ -293,4 +299,19 @@ fun createBitmapFromContentUri(context: Context, contentUri: String): Bitmap? {
         null
     }
     return bitmap
+}
+
+fun triggerHapticFeedback(context: Context) {
+    val vibrator = if (VERSION.SDK_INT >= VERSION_CODES.S) {
+        (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(VIBRATOR_SERVICE) as Vibrator
+    }
+
+    if (VERSION.SDK_INT >= VERSION_CODES.O) {
+        vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+    } else {
+        vibrator.vibrate(50)
+    }
 }

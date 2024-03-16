@@ -15,6 +15,7 @@ import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendResponse
 import com.cjrodriguez.cjchatgpt.data.util.storeAndAppendTopic
 import com.cjrodriguez.cjchatgpt.data.util.storeImageInCache
 import com.cjrodriguez.cjchatgpt.data.util.storeInTempFolderAndReturnUrl
+import com.cjrodriguez.cjchatgpt.data.util.triggerHapticFeedback
 import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GEMINI
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GEMINI_VISION
@@ -140,6 +141,7 @@ class GetGeminiChatResponse @Inject constructor(
                     }
                     (textResponseFlow as? Flow<GenerateContentResponse>)?.collectLatest { chunk ->
                         chunk.text?.let {
+                            triggerHapticFeedback(context)
                             storeAndAppendResponse(
                                 responseMessageId,
                                 it,
