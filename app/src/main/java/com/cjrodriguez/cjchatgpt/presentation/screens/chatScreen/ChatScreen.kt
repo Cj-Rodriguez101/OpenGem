@@ -454,6 +454,9 @@ fun ChatScreen(
                                 errorMessage = errorMessage.asString(),
                                 isLoading = isLoading,
                                 updateMessage = { onTriggerEvent(ChatListEvents.SetMessage(it)) },
+                                clearTextAndRemoveFiles = {
+                                    onTriggerEvent(ChatListEvents.ClearAllImageAndText)
+                                },
                                 shouldEnableTextField = shouldEnableTextField,
                                 sendMessage = {
                                     onTriggerEvent(ChatListEvents.SendMessage(status, it))

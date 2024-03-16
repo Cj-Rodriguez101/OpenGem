@@ -56,6 +56,7 @@ fun QuestionTextField(
     cancelMessageGeneration: () -> Unit = {},
     openVoiceRecordingSegment: () -> Unit = {},
     updateMessage: (String) -> Unit = {},
+    clearTextAndRemoveFiles: () -> Unit = {},
     uploadFile: () -> Unit = {},
     removeFile: (Uri) -> Unit = {},
 ) {
@@ -93,9 +94,10 @@ fun QuestionTextField(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
+                    errorBorderColor = Color.Transparent
                 ),
                 trailingIcon = {
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         AnimatedVisibility(errorMessage.isNotEmpty()) {
                             Icon(
                                 Icons.Filled.Error,
@@ -145,12 +147,13 @@ fun QuestionTextField(
                         .padding(top = 8.dp)
                 ) {
                     val (closeButton, noCount, sendButton) = createRefs()
-                    IconButton(onClick = { updateMessage("") }, modifier = Modifier
-                        .size(24.dp)
-                        .constrainAs(closeButton) {
-                            start.linkTo(parent.start)
-                            top.linkTo(parent.top)
-                        }) {
+                    IconButton(
+                        onClick = clearTextAndRemoveFiles, modifier = Modifier
+                            .size(24.dp)
+                            .constrainAs(closeButton) {
+                                start.linkTo(parent.start)
+                                top.linkTo(parent.top)
+                            }) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
                             contentDescription = stringResource(R.string.clear_text)

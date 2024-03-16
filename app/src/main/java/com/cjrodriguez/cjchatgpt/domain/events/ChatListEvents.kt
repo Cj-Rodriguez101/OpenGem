@@ -17,18 +17,19 @@ sealed class ChatListEvents {
 
     data class SetShouldShowVoiceSegment(val shouldShowVoiceSegment: Boolean) : ChatListEvents()
 
-    object NewChat : ChatListEvents()
+    data object NewChat : ChatListEvents()
     data class CopyTextToClipBoard(val messageToCopy: String) : ChatListEvents()
     data class AddImage(val messagesToCopy: List<Uri>) : ChatListEvents()
     data class RemoveImage(val messageToCopy: Uri) : ChatListEvents()
-    object CancelChatGeneration : ChatListEvents()
-    object RemoveHeadMessage : ChatListEvents()
-    object StartRecording : ChatListEvents()
+    data object ClearAllImageAndText : ChatListEvents()
+    data object CancelChatGeneration : ChatListEvents()
+    data object RemoveHeadMessage : ChatListEvents()
+    data object StartRecording : ChatListEvents()
     data class SaveFile(val imagePath: String) : ChatListEvents()
     data class SetZoomedImageUrl(val imagePath: String) : ChatListEvents()
 
-    object UpdatePowerLevel : ChatListEvents()
-    object StopRecording : ChatListEvents()
+    data object UpdatePowerLevel : ChatListEvents()
+    data object StopRecording : ChatListEvents()
     data class SetMessage(val message: String) : ChatListEvents()
     data class SetTopicId(val topicId: String) : ChatListEvents()
 }

@@ -1,17 +1,20 @@
 package com.cjrodriguez.cjchatgpt.presentation.viewmodels
 
+import android.content.ContentResolver
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.cjrodriguez.cjchatgpt.R
+import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.AddImage
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.ClearAllImageAndText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.NewChat
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.RemoveImage
@@ -28,6 +31,7 @@ import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.UpdatePowerLevel
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
+import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
@@ -59,6 +63,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
+    private val baseApplication: BaseApplication,
     private val chatRepository: ChatRepository,
     private val coroutineDispatcher: CoroutineDispatcher
 ) : ViewModel() {
@@ -188,6 +193,11 @@ class ChatViewModel @Inject constructor(
                 removeImage(events.messageToCopy)
             }
 
+            ClearAllImageAndText -> {
+                setMessage("")
+                _selectedFiles.value.clear()
+            }
+
             is SetTopicId -> {
                 _selectedTopicId.value = events.topicId
             }
@@ -250,16 +260,6 @@ class ChatViewModel @Inject constructor(
             updateErrorMessageIfFileIsTooLarge()
         }
     }
-
-//    private fun addImage(fileToAdd: MPFile<Any>) {
-//        if (_selectedFiles.value.contains(fileToAdd)) return
-//        viewModelScope.launch {
-//            _selectedFiles.update { currentFiles ->
-//                currentFiles.toMutableList().apply { add(fileToAdd) }
-//            }
-//            updateErrorMessageIfFileIsTooLarge()
-//        }
-//    }
 
     private fun saveFile(imagePath: String) {
         viewModelScope.launch {
@@ -331,7 +331,7 @@ class ChatViewModel @Inject constructor(
 
     private fun setTextLength(textLength: Int) {
         if (textLength > upperLimit.value) {
-            _errorMessage.value = UiText.StringResource(resId = R.string.text_is_too_long)
+            _errorMessage.value = UiText.StringResource(resId = string.text_is_too_long)
         } else {
             _errorMessage.value = UiText.DynamicString("")
         }
@@ -415,10 +415,28 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateErrorMessageIfFileIsTooLarge() {
-//        val fileSize = _selectedFiles.value.mapNotNull { it.getFileByteArray().size / (1024.0 * 1024.0) }.sum()
-//        val previousErrorMessage = errorMessage.value
-//        if(fileSize > 20) _errorMessage.value =
-//            UiText.StringResource(string.file_cannot_be_larger_than_20mb) else previousErrorMessage
+    private fun updateErrorMessageIfFileIsTooLarge() {
+
+        val contentResolver = baseApplication.contentResolver
+        val totalSumInMb = selectedFiles.value.sumOf { uri ->
+            getFileSizeFromUri(contentResolver, uri) / (1024.0 * 1024.0)
+        }
+        val previousErrorMessage = errorMessage.value
+        if (totalSumInMb > 20) _errorMessage.value =
+            UiText.StringResource(string.file_cannot_be_larger_than_20mb) else previousErrorMessage
+    }
+
+    private fun getFileSizeFromUri(contentResolver: ContentResolver, uri: Uri): Long {
+        var fileSize: Long = 0
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIndex >= 0) {
+                    fileSize = it.getLong(sizeIndex)
+                }
+            }
+        }
+        return fileSize
     }
 }
