@@ -35,6 +35,7 @@ import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
+import com.cjrodriguez.cjchatgpt.presentation.util.removeImagine
 import com.cjrodriguez.cjchatgpt.presentation.util.shouldTriggerImageModel
 import com.cjrodriguez.cjchatgpt.presentation.util.tryCatch
 import kotlinx.coroutines.async
@@ -103,7 +104,7 @@ class GetOpenAiChatResponse @Inject constructor(
                 ChatEntity(
                     messageId = requestMessageId,
                     topicId = topicId,
-                    expandedContent = message,
+                    expandedContent = message.removeImagine(),
                     modelId = if (shouldGenerateImage) "dall-e-3" else model,
                     isUserGenerated = !shouldGenerateImage,
                     imageUrls = when {

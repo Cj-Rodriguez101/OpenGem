@@ -22,6 +22,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GEMINI_VISION
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
+import com.cjrodriguez.cjchatgpt.presentation.util.removeImagine
 import com.cjrodriguez.cjchatgpt.presentation.util.shouldTriggerImageModel
 import com.cjrodriguez.cjchatgpt.presentation.util.tryCatch
 import com.google.ai.client.generativeai.GenerativeModel
@@ -92,7 +93,7 @@ class GetGeminiChatResponse @Inject constructor(
                 ChatEntity(
                     messageId = requestMessageId,
                     topicId = topicId,
-                    expandedContent = message,
+                    expandedContent = message.removeImagine(),
                     isUserGenerated = !shouldGenerateImage,
                     imageUrls = when {
                         fileUrls.isNotEmpty() -> fileUrls.toList()

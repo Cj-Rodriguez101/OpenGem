@@ -42,11 +42,9 @@ val SYNONYMS_OF_IMAGE = arrayOf(
 )
 
 fun shouldTriggerImageModel(prompt: String): Boolean {
-    val wordsInPrompt = prompt.split("\\s+".toRegex()).map { it.trim().toLowerCase() }
+    return prompt.contains("/imagine")
+}
 
-    return SYNONYMS_OF_IMAGE.any { synonym ->
-        wordsInPrompt.any { word ->
-            word == synonym || word == "${synonym}s"
-        }
-    }
+fun String.removeImagine(): String {
+    return this.replace("/imagine", "")
 }
