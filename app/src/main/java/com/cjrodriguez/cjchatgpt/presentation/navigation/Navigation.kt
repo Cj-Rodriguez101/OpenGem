@@ -1,5 +1,8 @@
 package com.cjrodriguez.cjchatgpt.presentation.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -79,7 +82,11 @@ fun Navigation(status: ConnectivityObserver.Status) {
         }
         composable(
             route = Screen.TopicScreen.route + "/{topicId}",
-            arguments = listOf(navArgument("topicId") { type = NavType.StringType })
+            arguments = listOf(navArgument("topicId") { type = NavType.StringType }),
+            enterTransition = { EnterTransition() },
+            exitTransition = { ExitTransition() },
+            popEnterTransition = { PopEnterTransition() },
+            popExitTransition = { PopExitTransition() },
         ) {
             val topicViewModel = hiltViewModel<TopicViewModel>()
             val query by topicViewModel.query.collectAsStateWithLifecycle()
@@ -97,3 +104,23 @@ fun Navigation(status: ConnectivityObserver.Status) {
         }
     }
 }
+
+private fun EnterTransition() = slideInHorizontally(
+    initialOffsetX = { 1000 },
+    animationSpec = tween(500)
+)
+
+private fun PopEnterTransition() = slideInHorizontally(
+    initialOffsetX = { -1000 },
+    animationSpec = tween(500)
+)
+
+private fun ExitTransition() = slideOutHorizontally(
+    targetOffsetX = { -1000 },
+    animationSpec = tween(500)
+)
+
+private fun PopExitTransition() = slideOutHorizontally(
+    targetOffsetX = { 1000 },
+    animationSpec = tween(500)
+)
