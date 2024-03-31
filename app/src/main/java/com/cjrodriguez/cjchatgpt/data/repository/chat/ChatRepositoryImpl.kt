@@ -4,36 +4,55 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import com.cjrodriguez.cjchatgpt.data.datasource.audio.Player
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.domain.model.MessageWrapper
 import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
+import com.cjrodriguez.cjchatgpt.interactors.GetAndPlayAiResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetTextFromSpeech
 import com.cjrodriguez.cjchatgpt.interactors.SaveGeneratedImage
+import com.cjrodriguez.cjchatgpt.interactors.SoundAndTopicId
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.toChat
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ChatRepositoryImpl @Inject constructor(
     private val getOpenAiChatResponse: GetOpenAiChatResponse,
     private val getGeminiChatResponse: GetGeminiChatResponse,
+    private val getAndPlayAiResponse: GetAndPlayAiResponse,
     private val getTextFromSpeech: GetTextFromSpeech,
     private val copyTextToClipBoard: CopyTextToClipBoard,
     private val saveGeneratedImage: SaveGeneratedImage,
     private val dao: ChatTopicDao,
     private val settingsDataStore: SettingsDataStore,
     private val recorder: Recorder,
+    private val player: Player,
 ) : ChatRepository {
+
+    override fun getAndPlayAiResponse(
+        isNewChat: Boolean,
+        isCurrentlyConnectedToInternet: Boolean,
+        topicId: String,
+        model: String,
+        isOpenAi: Boolean
+    ): Flow<DataState<SoundAndTopicId>> {
+        return getAndPlayAiResponse.execute(
+            isNewChat,
+            isCurrentlyConnectedToInternet,
+            topicId,
+            model,
+            isOpenAi
+        )
+    }
     override fun getAndStoreOpenAiChatResponse(
         message: MessageWrapper,
         isNewChat: Boolean,
@@ -100,18 +119,16 @@ class ChatRepositoryImpl @Inject constructor(
         return recorder.getPowerLevel()
     }
 
-    override fun startRecording() {
-        recorder.startRecording()
+    override fun startRecording(fileName: String) {
+        recorder.startRecording(fileName)
     }
 
     override fun setRecordingState(isRecordingState: Boolean) {
         recorder.setRecordingState(isRecordingState)
     }
 
-    override suspend fun updatePowerLevel() {
-        withContext(Dispatchers.IO) {
-            recorder.updatePowerLevel()
-        }
+    override suspend fun updatePowerLevel(timeout: Long): Flow<Boolean> {
+        return recorder.updatePowerLevel(timeout)
     }
 
     override fun saveImage(imagePath: String): Flow<DataState<String>> {
@@ -121,4 +138,18 @@ class ChatRepositoryImpl @Inject constructor(
     override fun stopRecording() {
         recorder.stopRecording()
     }
+
+    override fun startPlaying(audioPath: String) {
+        player.playAudio(audioPath)
+    }
+
+    override fun stopPlaying() {
+        player.stopAudio()
+    }
+
+    override fun resetAudioPlayingState() {
+        player.resetAudioPlayingState()
+    }
+
+    override fun getAudioFinished() = player.getAudioFinished()
 }

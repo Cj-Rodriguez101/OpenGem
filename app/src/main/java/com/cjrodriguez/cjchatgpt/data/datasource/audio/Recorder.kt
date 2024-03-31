@@ -1,10 +1,11 @@
 package com.cjrodriguez.cjchatgpt.data.datasource.audio
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface Recorder {
 
-    fun startRecording()
+    fun startRecording(fileName: String)
 
     fun stopRecording()
 
@@ -12,5 +13,5 @@ interface Recorder {
 
     fun getPowerLevel(): StateFlow<Float>
 
-    suspend fun updatePowerLevel()
+    fun updatePowerLevel(timeOut: Long): Flow<Boolean>
 }

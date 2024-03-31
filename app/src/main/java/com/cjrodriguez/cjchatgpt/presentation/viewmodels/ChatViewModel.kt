@@ -10,6 +10,7 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
+import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver.Status
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.util.generateRandomId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
@@ -18,15 +19,18 @@ import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.ClearAllImageAndTe
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.NewChat
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.RemoveImage
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.ResetAudioPlayingState
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SendMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetGptVersion
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetMessage
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetRecordingState
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetShouldShowVoiceSegment
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetSpeakingState
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetTopicId
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetZoomedImageUrl
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StartRecording
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StartVoiceChat
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.UpdatePowerLevel
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
@@ -36,6 +40,9 @@ import com.cjrodriguez.cjchatgpt.presentation.components.UiText
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType.GPT3
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.OPEN_AI
+import com.cjrodriguez.cjchatgpt.presentation.util.SpeakingState
+import com.cjrodriguez.cjchatgpt.presentation.util.SpeakingState.*
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.ERROR
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.FINISHED
@@ -43,6 +50,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.PROCESSING
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.RECORDING
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelChildren
@@ -53,6 +61,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -79,6 +88,12 @@ class ChatViewModel @Inject constructor(
     private val _shouldShowRecordingScreen: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val shouldShowRecordingScreen = _shouldShowRecordingScreen.asStateFlow()
 
+    val hasFinishedPlayingAudio = chatRepository.getAudioFinished().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = false
+    )
+
     private val _selectedFiles: MutableStateFlow<MutableList<Uri>> = MutableStateFlow(
         mutableListOf()
     )
@@ -95,6 +110,9 @@ class ChatViewModel @Inject constructor(
 
     private val _recordingState: MutableStateFlow<RecordingState> = MutableStateFlow(RECORDING)
     val recordingState = _recordingState.asStateFlow()
+
+    private val _speakingState: MutableStateFlow<SpeakingState> = MutableStateFlow(SPEAKING)
+    val speakingState = _speakingState.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val chatPagingFlow: Flow<PagingData<Chat>> =
@@ -155,6 +173,9 @@ class ChatViewModel @Inject constructor(
         when (events) {
 
             is ChatListEvents.CancelChatGeneration -> {
+                chatRepository.stopPlaying()
+                chatRepository.stopRecording()
+                chatRepository.setRecordingState(false)
                 _shouldContinueChatGeneration.value = false
             }
 
@@ -168,6 +189,10 @@ class ChatViewModel @Inject constructor(
 
             is SaveFile -> {
                 saveFile(events.imagePath)
+            }
+
+            is SetSpeakingState -> {
+                _speakingState.value = events.recordingState
             }
 
             is SetZoomedImageUrl -> {
@@ -215,8 +240,10 @@ class ChatViewModel @Inject constructor(
             }
 
             is StartRecording -> {
-                chatRepository.startRecording()
+                if (_recordingState.value == PROCESSING) return
                 _recordingState.value = RECORDING
+                chatRepository.startRecording(events.fileName)
+
             }
 
             is SetRecordingState -> {
@@ -224,18 +251,137 @@ class ChatViewModel @Inject constructor(
             }
 
             is StopRecording -> {
-                chatRepository.stopRecording()
-                _recordingState.value = PROCESSING
-                getTextToSpeech()
+                stopRecording(events.shouldGetResponse)
             }
 
             is UpdatePowerLevel -> {
                 viewModelScope.launch {
-                    chatRepository.updatePowerLevel()
+                    withContext(Dispatchers.IO) {
+                        val shouldStopRecording =
+                            chatRepository.updatePowerLevel(events.timeout).first()
+                        if (shouldStopRecording) stopRecording()
+                    }
                 }
             }
 
+            is StartVoiceChat -> {
+                viewModelScope.launch {
+                    withContext(Dispatchers.IO) {
+                        if (events.isNewChat) {
+                            _selectedTopicId.value = generateRandomId()
+                        }
+                        chatRepository.startRecording()
+                        chatRepository.setRecordingState(true)
+
+                        chatRepository.updatePowerLevel(3000).collectLatest { shouldStopRecording ->
+                            if (!shouldStopRecording) return@collectLatest
+                            chatRepository.setRecordingState(false)
+                            chatRepository.stopRecording()
+                            getAndPlayAiResponse(
+                                events.isNewChat,
+                                events.isCurrentlyConnectedToInternet
+                            )
+                        }
+                    }
+                }
+            }
+
+            is ResetAudioPlayingState -> {
+                chatRepository.resetAudioPlayingState()
+            }
+
             else -> Unit
+        }
+    }
+
+    private suspend fun getAndPlayAiResponse(isNewChat: Boolean, status: Status) {
+        chatRepository.getAndPlayAiResponse(
+            isNewChat = isNewChat,
+            isCurrentlyConnectedToInternet = status == Status.Available,
+            topicId = _selectedTopicId.value,
+            model = aiType.value.modelName,
+            isOpenAi = aiType.value.familyName == OPEN_AI
+        ).collectLatest { dataState ->
+            _speakingState.value = SpeakingState.PROCESSING
+            _isLoading.value = dataState.isLoading
+
+            _message.value = ""
+            _wordCount.value = 0
+
+            dataState.data?.let {
+                _speakingState.value = SPEAKING
+                _selectedTopicId.value = it.topicId
+                if (it.audioPath.isNotEmpty()) chatRepository.startPlaying(it.audioPath)
+            }
+
+            dataState.message?.let {
+                _speakingState.value = SpeakingState.ERROR
+                appendToMessageQueue(it)
+            }
+        }
+    }
+
+    private fun sendMessage(
+        status: Status,
+        fileUris: List<String>
+    ) {
+        var isNewChat = false
+        if (_selectedTopicId.value.isEmpty()) {
+            _selectedTopicId.value = generateRandomId()
+            isNewChat = true
+        }
+
+        _cancellableCoroutineScope.value = viewModelScope.launch {
+            withContext(coroutineDispatcher) {
+                val messageToSend = message.value.trim()
+                val messageWrapper = MessageWrapper(
+                    message = messageToSend,
+                    fileUris = fileUris
+                )
+                val topicIdToSend = _selectedTopicId.value
+                val isConnectedToInternet = status == ConnectivityObserver.Status.Available
+
+                val responseFlow = when (aiType.value) {
+                    AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
+                        message = messageWrapper,
+                        isNewChat = isNewChat,
+                        isCurrentlyConnectedToInternet = isConnectedToInternet,
+                        topicId = topicIdToSend
+                    )
+
+                    else -> chatRepository.getAndStoreOpenAiChatResponse(
+                        message = messageWrapper,
+                        isNewChat = isNewChat,
+                        isCurrentlyConnectedToInternet = isConnectedToInternet,
+                        topicId = topicIdToSend,
+                        model = aiType.value.modelName
+                    )
+                }
+
+                responseFlow.cancellable().collectLatest { dataState ->
+                    _isLoading.value = dataState.isLoading
+
+                    _message.value = ""
+                    _wordCount.value = 0
+
+                    dataState.data?.let { _selectedTopicId.value = it }
+
+                    dataState.message?.let {
+                        appendToMessageQueue(it)
+                    }
+                }
+            }
+        }
+        _selectedFiles.value = mutableListOf()
+    }
+
+    private fun stopRecording(shouldGetResponse: Boolean = true) {
+        chatRepository.stopRecording()
+        if (shouldGetResponse) {
+            _recordingState.value = PROCESSING
+            getTextToSpeech()
+        } else {
+            _recordingState.value = RECORDING
         }
     }
 
@@ -335,60 +481,6 @@ class ChatViewModel @Inject constructor(
         } else {
             _errorMessage.value = UiText.DynamicString("")
         }
-    }
-
-    private fun sendMessage(
-        status: ConnectivityObserver.Status,
-        fileUris: List<String>
-    ) {
-        var isNewChat = false
-        if (_selectedTopicId.value.isEmpty()) {
-            _selectedTopicId.value = generateRandomId()
-            isNewChat = true
-        }
-
-        _cancellableCoroutineScope.value = viewModelScope.launch {
-            withContext(coroutineDispatcher) {
-                val messageToSend = message.value.trim()
-                val messageWrapper = MessageWrapper(
-                    message = messageToSend,
-                    fileUris = fileUris
-                )
-                val topicIdToSend = _selectedTopicId.value
-                val isConnectedToInternet = status == ConnectivityObserver.Status.Available
-
-                val responseFlow = when (aiType.value) {
-                    AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
-                        message = messageWrapper,
-                        isNewChat = isNewChat,
-                        isCurrentlyConnectedToInternet = isConnectedToInternet,
-                        topicId = topicIdToSend
-                    )
-
-                    else -> chatRepository.getAndStoreOpenAiChatResponse(
-                        message = messageWrapper,
-                        isNewChat = isNewChat,
-                        isCurrentlyConnectedToInternet = isConnectedToInternet,
-                        topicId = topicIdToSend,
-                        model = aiType.value.modelName
-                    )
-                }
-
-                responseFlow.cancellable().collectLatest { dataState ->
-                    _isLoading.value = dataState.isLoading
-
-                    _message.value = ""
-                    _wordCount.value = 0
-
-                    dataState.data?.let { _selectedTopicId.value = it }
-
-                    dataState.message?.let {
-                        appendToMessageQueue(it)
-                    }
-                }
-            }
-        }
-        _selectedFiles.value = mutableListOf()
     }
 
     private fun appendToMessageQueue(messageInfo: GenericMessageInfo.Builder) {

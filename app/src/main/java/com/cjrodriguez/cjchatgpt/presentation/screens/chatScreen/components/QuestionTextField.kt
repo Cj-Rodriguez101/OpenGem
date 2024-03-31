@@ -8,15 +8,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberBasicTooltipState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Headset
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
@@ -70,44 +74,18 @@ fun QuestionTextField(
     errorMessage: String = "",
     isLoading: Boolean = false,
     shouldEnableTextField: Boolean = true,
+    shouldEnableVoiceChat: Boolean = true,
     sendMessage: (List<String>) -> Unit = {},
     cancelMessageGeneration: () -> Unit = {},
     openVoiceRecordingSegment: () -> Unit = {},
     updateMessage: (String) -> Unit = {},
     clearTextAndRemoveFiles: () -> Unit = {},
     uploadFile: () -> Unit = {},
+    openVoiceChat: () -> Unit = {},
     removeFile: (Uri) -> Unit = {},
 ) {
     val toolTipState = rememberBasicTooltipState(isPersistent = false)
     val scope = rememberCoroutineScope()
-
-    BasicTooltipBox(
-        focusable = true,
-        positionProvider = object : PopupPositionProvider {
-            override fun calculatePosition(
-                anchorBounds: IntRect,
-                windowSize: IntSize,
-                layoutDirection: LayoutDirection,
-                popupContentSize: IntSize
-            ): IntOffset {
-                return IntOffset(
-                    x = (windowSize.width - popupContentSize.width) / 2,
-                    y = (windowSize.height - popupContentSize.height) / 2
-                )
-            }
-        }, tooltip = {
-            RichTooltip(
-                title = { Text(text = "Create Image") },
-            ) {
-                Text(buildAnnotatedString {
-                    append("To create an image type ")
-                    withStyle(style = SpanStyle(fontWeight = FontWeight.Black)) {
-                        append("\"/Imagine\"")
-                    }
-                })
-            }
-        }, state = toolTipState
-    ) {}
     Column(
         modifier = modifier
             .then(
@@ -124,11 +102,6 @@ fun QuestionTextField(
         }
         Row(
             modifier = Modifier
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = MaterialTheme.shapes.extraLarge
-                )
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -138,10 +111,10 @@ fun QuestionTextField(
                 onValueChange = updateMessage,
                 enabled = shouldEnableTextField,
                 isError = errorMessage.isNotEmpty(),
+                shape = MaterialTheme.shapes.extraLarge,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    errorBorderColor = Color.Transparent
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.primary,
                 ),
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -176,8 +149,20 @@ fun QuestionTextField(
                 },
                 modifier = Modifier
                     .heightIn(max = 200.dp)
-                    .fillMaxWidth()
+                    .fillMaxWidth(0.85f)
             )
+            Spacer(modifier = Modifier.width(16.dp))
+            IconButton(
+                enabled = shouldEnableVoiceChat,
+                modifier = Modifier.border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = CircleShape
+                ),
+                onClick = openVoiceChat
+            ) {
+                Icon(imageVector = Icons.Default.Headset, contentDescription = "Voice")
+            }
         }
 
         if (!isLoading) {
@@ -270,5 +255,30 @@ fun QuestionTextField(
             }
         }
     }
-
+    BasicTooltipBox(
+        positionProvider = object : PopupPositionProvider {
+            override fun calculatePosition(
+                anchorBounds: IntRect,
+                windowSize: IntSize,
+                layoutDirection: LayoutDirection,
+                popupContentSize: IntSize
+            ): IntOffset {
+                return IntOffset(
+                    x = (windowSize.width - popupContentSize.width) / 2,
+                    y = (windowSize.height - popupContentSize.height) / 2
+                )
+            }
+        }, tooltip = {
+            RichTooltip(
+                title = { Text(text = stringResource(string.create_image)) },
+            ) {
+                Text(buildAnnotatedString {
+                    append(stringResource(string.to_create_an_image_type))
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Black)) {
+                        append("\"/Imagine\"")
+                    }
+                })
+            }
+        }, state = toolTipState
+    ) {}
 }

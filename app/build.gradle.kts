@@ -67,6 +67,7 @@ kapt {
 }
 
 dependencies {
+    implementation(libs.lottie)
     implementation(libs.zoomable)
     implementation(libs.markdown.image)
     implementation(libs.markdown.parser)

@@ -35,4 +35,6 @@
   <string name="remove_file">Remove file</string>
   <string name="file_cannot_be_larger_than_20mb">File cannot be larger than 20mb</string>
   <string name="create_image_tip">Create Image Tip</string>
+  <string name="create_image">Create Image</string>
+  <string name="to_create_an_image_type">"To create an image type "</string>
 </resources>

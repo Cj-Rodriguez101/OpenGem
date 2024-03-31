@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -85,7 +86,12 @@ import com.cjrodriguez.cjchatgpt.R.string
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.CancelChatGeneration
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.ResetAudioPlayingState
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SaveFile
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetRecordingState
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.SetSpeakingState
+import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents.StopRecording
 import com.cjrodriguez.cjchatgpt.domain.model.Chat
 import com.cjrodriguez.cjchatgpt.presentation.MainActivity
 import com.cjrodriguez.cjchatgpt.presentation.components.UiText
@@ -93,11 +99,14 @@ import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AiTe
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.AnimateTypewriterText
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ChatCard
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.QuestionTextField
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.VoiceChat
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.VoiceRecordingSegment
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ZoomableComposable
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
+import com.cjrodriguez.cjchatgpt.presentation.util.SpeakingState
+import com.cjrodriguez.cjchatgpt.presentation.util.SpeakingState.RECORDING
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.rememberImeState
 import dev.jeziellago.compose.markdowntext.MarkdownText
@@ -114,12 +123,14 @@ fun ChatScreen(
     status: ConnectivityObserver.Status,
     message: String,
     topicTitle: String,
+    speakingState: SpeakingState,
     selectedFiles: List<Uri>,
     recordingState: RecordingState,
-    shouldShowRecordingScreen: Boolean,
+    isRecordingScreenVisible: Boolean,
     imageZoomedInPath: String,
     topicId: String,
     wordCount: Int,
+    hasFinishedPlayingAudio: Boolean,
     upperLimit: Int,
     circlePowerLevel: Float,
     errorMessage: UiText,
@@ -128,16 +139,17 @@ fun ChatScreen(
 ) {
     val context = LocalContext.current
     val snackBarHostState = remember { SnackbarHostState() }
+    var isVoiceChatScreenOpen by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
     val shouldEnableTextField by remember {
-        derivedStateOf { !shouldShowRecordingScreen }
+        derivedStateOf { !isRecordingScreenVisible }
     }
     val shouldShowScrollIcon = remember {
         derivedStateOf { listState.canScrollBackward }
     }
-    val imeState = rememberImeState()
+    val imeState by rememberImeState()
     val scrollState = rememberScrollState()
     var hasAlreadyCheckedForAudioPermission by rememberSaveable { mutableStateOf(false) }
     var hasAlreadyCheckedForStoragePermission by rememberSaveable { mutableStateOf(false) }
@@ -148,8 +160,17 @@ fun ChatScreen(
     val recordAudioLauncher = rememberLauncherForActivityResult(
         contract = RequestPermission(),
         onResult = { _ ->
-            onTriggerEvent(ChatListEvents.StartRecording)
+            if (isRecordingScreenVisible) {
+                onTriggerEvent(ChatListEvents.StartRecording())
+            } else {
+                isVoiceChatScreenOpen = true
+                onTriggerEvent(ChatListEvents.StartVoiceChat(isCurrentlyConnectedToInternet = status))
+            }
             hasAlreadyCheckedForAudioPermission = true
+            Log.e(
+                "permission",
+                "hasAlreadyCheckedForAudioPermission $hasAlreadyCheckedForAudioPermission"
+            )
         })
     val storageLauncher = rememberLauncherForActivityResult(
         contract = RequestPermission(),
@@ -165,10 +186,27 @@ fun ChatScreen(
         onTriggerEvent(ChatListEvents.AddImage(it))
     }
 
-    LaunchedEffect(key1 = imeState.value) {
-        if (imeState.value) {
+    LaunchedEffect(hasFinishedPlayingAudio) {
+        if (hasFinishedPlayingAudio) {
+            onTriggerEvent(SetSpeakingState(RECORDING))
+            onTriggerEvent(ChatListEvents.StartVoiceChat(false, status))
+            onTriggerEvent(ResetAudioPlayingState)
+        }
+    }
+
+    LaunchedEffect(key1 = imeState) {
+        if (imeState) {
             scrollState.animateScrollTo(scrollState.maxValue, tween(300))
         }
+    }
+
+    fun closeAndResetVoiceChatScreen() {
+        onTriggerEvent(CancelChatGeneration)
+        onTriggerEvent(SetRecordingState(false))
+        onTriggerEvent(SetSpeakingState(RECORDING))
+        onTriggerEvent(ResetAudioPlayingState)
+        onTriggerEvent(StopRecording(false))
+        isVoiceChatScreenOpen = false
     }
 
     CjChatGPTTheme(
@@ -448,11 +486,18 @@ fun ChatScreen(
                             }
 
                             QuestionTextField(
+                                modifier = Modifier
+                                    .constrainAs(textField) {
+                                        bottom.linkTo(if (isRecordingScreenVisible) voiceRecord.top else parent.bottom)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                    },
                                 message = message,
                                 wordCount = wordCount,
                                 upperLimit = upperLimit,
                                 errorMessage = errorMessage.asString(),
                                 isLoading = isLoading,
+                                shouldEnableVoiceChat = !isRecordingScreenVisible,
                                 updateMessage = { onTriggerEvent(ChatListEvents.SetMessage(it)) },
                                 clearTextAndRemoveFiles = {
                                     onTriggerEvent(ChatListEvents.ClearAllImageAndText)
@@ -467,7 +512,7 @@ fun ChatScreen(
                                 },
                                 openVoiceRecordingSegment = {
                                     if (audioPermissionCheckResult == PackageManager.PERMISSION_GRANTED) {
-                                        onTriggerEvent(ChatListEvents.StartRecording)
+                                        onTriggerEvent(ChatListEvents.StartRecording())
                                     } else if (!hasAlreadyCheckedForAudioPermission) {
                                         recordAudioLauncher.launch(permission.RECORD_AUDIO)
                                     } else {
@@ -487,17 +532,30 @@ fun ChatScreen(
                                 removeFile = {
                                     onTriggerEvent(ChatListEvents.RemoveImage(it))
                                 },
-                                files = selectedFiles,
-                                modifier = Modifier
-                                    .constrainAs(textField) {
-                                        bottom.linkTo(if (shouldShowRecordingScreen) voiceRecord.top else parent.bottom)
-                                        start.linkTo(parent.start)
-                                        end.linkTo(parent.end)
+                                openVoiceChat = {
+                                    if (audioPermissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                                        onTriggerEvent(
+                                            ChatListEvents.StartVoiceChat(
+                                                isCurrentlyConnectedToInternet = status
+                                            )
+                                        )
+                                        onTriggerEvent(SetSpeakingState(RECORDING))
+                                        isVoiceChatScreenOpen = true
+                                    } else if (!hasAlreadyCheckedForAudioPermission) {
+                                        recordAudioLauncher.launch(permission.RECORD_AUDIO)
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(string.you_need_audio_permission),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
+                                },
+                                files = selectedFiles
                             )
 
                             AnimatedVisibility(
-                                visible = shouldShowRecordingScreen,
+                                visible = isRecordingScreenVisible,
                                 exit = slideOutVertically(
                                     targetOffsetY = { fullHeight -> fullHeight },
                                     animationSpec = tween(durationMillis = 300)
@@ -523,10 +581,10 @@ fun ChatScreen(
                                             )
                                         )
                                     },
-                                    stopListening = { onTriggerEvent(ChatListEvents.StopRecording) },
-                                    updatePowerLevel = { onTriggerEvent(ChatListEvents.UpdatePowerLevel) },
+                                    stopListening = { onTriggerEvent(StopRecording()) },
+                                    updatePowerLevel = { onTriggerEvent(ChatListEvents.UpdatePowerLevel()) },
                                     retryTranscription = {
-                                        onTriggerEvent(ChatListEvents.StartRecording)
+                                        onTriggerEvent(ChatListEvents.StartRecording())
                                     }
                                 )
                             }
@@ -538,7 +596,9 @@ fun ChatScreen(
                     visible = imageZoomedInPath != ""
                 ) {
                     BackHandler {
-                        onTriggerEvent(ChatListEvents.SetZoomedImageUrl(""))
+                        if (imageZoomedInPath != "") {
+                            onTriggerEvent(ChatListEvents.SetZoomedImageUrl(""))
+                        }
                     }
                     ZoomableComposable(
                         imageZoomedInPath,
@@ -555,6 +615,22 @@ fun ChatScreen(
                                     context
                                 )
                             }
+                        }
+                    )
+                }
+
+                AnimatedVisibility(visible = isVoiceChatScreenOpen) {
+                    BackHandler {
+                        if (isVoiceChatScreenOpen) {
+                            closeAndResetVoiceChatScreen()
+                        }
+                    }
+                    VoiceChat(
+                        onTriggerEvent = onTriggerEvent,
+                        speakingState = speakingState,
+                        selectedAiType = selectedAiType,
+                        closeScreen = {
+                            closeAndResetVoiceChatScreen()
                         }
                     )
                 }

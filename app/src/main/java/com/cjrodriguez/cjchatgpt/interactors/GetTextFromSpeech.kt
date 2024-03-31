@@ -43,15 +43,15 @@ class GetTextFromSpeech @Inject constructor(
                     message = GenericMessageInfo
                         .Builder().id("GetTextFromSpeech.Error")
                         .title(context.getString(string.error))
-                        .description(context.getString(string.unknown_error))
+                        .description(context.getString(string.unknown_error) + ex.toString())
                         .uiComponentType(UIComponentType.Dialog)
                 )
             )
         }
     }
+}
 
-    private fun File.getRecordingSource(): okio.Source {
-        if (!this.exists()) throw IOException("Recording file does not exist.")
-        return this.source().buffer()
-    }
+fun File.getRecordingSource(): okio.Source {
+    if (!this.exists()) throw IOException("Recording file does not exist.")
+    return this.source().buffer()
 }

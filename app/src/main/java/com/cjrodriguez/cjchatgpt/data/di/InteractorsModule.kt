@@ -2,6 +2,7 @@ package com.cjrodriguez.cjchatgpt.data.di
 
 import android.content.ClipboardManager
 import android.content.Context
+import com.cjrodriguez.cjchatgpt.data.datasource.audio.Player
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
@@ -14,6 +15,7 @@ import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepository
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepositoryImpl
 import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
 import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
+import com.cjrodriguez.cjchatgpt.interactors.GetAndPlayAiResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetGeminiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetOpenAiChatResponse
 import com.cjrodriguez.cjchatgpt.interactors.GetTextFromSpeech
@@ -53,6 +55,22 @@ object InteractorsModule {
     ): GetGeminiChatResponse {
         return GetGeminiChatResponse(
             baseApplication.applicationContext,
+            geminiModelApi,
+            chatTopicDao
+        )
+    }
+
+    @ViewModelScoped
+    @Provides
+    fun provideGetAndPlayAiResponse(
+        baseApplication: BaseApplication,
+        openApiConfig: OpenApiConfig,
+        geminiModelApi: GeminiModelApi,
+        chatTopicDao: ChatTopicDao
+    ): GetAndPlayAiResponse {
+        return GetAndPlayAiResponse(
+            baseApplication.applicationContext,
+            openApiConfig,
             geminiModelApi,
             chatTopicDao
         )
@@ -109,22 +127,26 @@ object InteractorsModule {
     fun provideChatRepository(
         getOpenAiChatResponse: GetOpenAiChatResponse,
         getGeminiChatResponse: GetGeminiChatResponse,
+        getAndPlayAiResponse: GetAndPlayAiResponse,
         getTextFromSpeech: GetTextFromSpeech,
         copyTextToClipBoard: CopyTextToClipBoard,
         saveGeneratedImage: SaveGeneratedImage,
         settingsDataStore: SettingsDataStore,
         chatTopicDao: ChatTopicDao,
         recorder: Recorder,
+        player: Player
     ): ChatRepository {
         return ChatRepositoryImpl(
             getOpenAiChatResponse,
             getGeminiChatResponse,
+            getAndPlayAiResponse,
             getTextFromSpeech,
             copyTextToClipBoard,
             saveGeneratedImage,
             chatTopicDao,
             settingsDataStore,
-            recorder
+            recorder,
+            player
         )
     }
 

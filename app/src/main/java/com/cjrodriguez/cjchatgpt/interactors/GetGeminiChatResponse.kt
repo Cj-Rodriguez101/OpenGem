@@ -100,22 +100,17 @@ class GetGeminiChatResponse @Inject constructor(
                         shouldGenerateImage -> listOf(LOADING)
                         else -> listOf()
                     },
-                    lastCreatedIndex = lastCreatedIndex + 1,
+                    lastCreatedIndex = lastCreatedIndex.inc(),
                     modelId = GEMINI.modelName
                 )
             )
             val textResponseFlow = when {
                 shouldGenerateImage -> null
-                isNewChat -> {
-                    getGeminiResponseFlow(
-                        bitmapList = bitmapList,
-                        messageWrapper = messageWrapper,
-                        generativeModel = geminiModel
-                    )
-                }
-
                 else -> {
-                    val contentList: MutableList<Content> = loadHistoryToGemini(topicId)
+                    val contentList: MutableList<Content> = loadHistoryToGemini(
+                        topicId,
+                        chatTopicDao
+                    )
                     getGeminiResponseFlow(
                         history = contentList,
                         bitmapList = bitmapList,
@@ -125,72 +120,20 @@ class GetGeminiChatResponse @Inject constructor(
                 }
             }
 
-            coroutineScope {
-                val messageJob = async {
-                    ensureActive()
-                    if ((textResponseFlow as? GenerateContentResponse) != null) {
-                        storeAndAppendResponse(
-                            responseMessageId,
-                            (textResponseFlow).text.toString(),
-                            topicId,
-                            lastCreatedIndex,
-                            GEMINI_VISION.modelName,
-                            listOf(),
-                            chatTopicDao
-                        )
-                        return@async
-                    }
-                    (textResponseFlow as? Flow<GenerateContentResponse>)?.collectLatest { chunk ->
-                        chunk.text?.let {
-                            triggerHapticFeedback(context)
-                            storeAndAppendResponse(
-                                responseMessageId,
-                                it,
-                                topicId,
-                                lastCreatedIndex,
-                                GEMINI.modelName,
-                                listOf(),
-                                chatTopicDao
-                            )
-                        }
-                    } ?: geminiModel.generateContent(message).let { imageText ->
-                        //gemini api does not yet picture output
-                        imageText.text?.let {
-                            val image = storeImageInCache(
-                                imageUrl = it,
-                                isImageUrl = false,
-                                topicId = topicId,
-                                context = context
-                            )
-                            chatTopicDao.updateImageUrl(
-                                messageId = requestMessageId,
-                                imageUrl = listOf(image ?: ERROR)
-                            )
-                        }
-                    }
-                }
-                if (isNewChat) {
-                    val topicFlow =
-                        geminiModelApi.getGenerativeModel()
-                            .generateContentStream("$SUMMARIZE_PROMPT $message")
-                    val topicJob = async {
-                        ensureActive()
-                        topicFlow.collectLatest { chunk ->
-                            chunk.text?.let {
-                                storeAndAppendTopic(
-                                    topicId,
-                                    it,
-                                    chatTopicDao
-                                )
-                            }
-                        }
-                    }
-
-                    errorMessage = tryCatch(awaitAll(messageJob, topicJob))
-                } else {
-                    errorMessage = tryCatch(messageJob.await())
-                }
-            }
+            errorMessage = collectGeminiResponse(
+                chatTopicDao,
+                context,
+                textResponseFlow,
+                responseMessageId,
+                topicId,
+                lastCreatedIndex,
+                geminiModel,
+                geminiModelApi.getGenerativeModel(GEMINI.modelName),
+                message,
+                requestMessageId,
+                isNewChat,
+                errorMessage
+            )
         } catch (ex: Exception) {
             errorMessage = ex.message.toString()
         }
@@ -224,54 +167,139 @@ class GetGeminiChatResponse @Inject constructor(
         }
 
     }
+}
 
-    private fun loadHistoryToGemini(topicId: String): MutableList<Content> {
-        val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
-        val index = history.indexOfLast { !it.isUserGenerated }
-        val mutableHistory = if (index == -1) {
-            listOf()
-        } else {
-            history.subList(0, index + 1)
-        }
-        val contentList: MutableList<Content> = mutableListOf()
-        mutableHistory.map {
-            if (it.imageUrls.isNotEmpty()) {
-                contentList.add(content(role = "user") {
-                    text(it.expandedContent)
-                })
-                contentList.add(content(role = "model") {
-                    text("The image created was found here ${it.imageUrls}")
-                })
-            } else {
-                contentList.add(
-                    content(role = if (it.isUserGenerated) "user" else "model") {
-                        text(it.expandedContent)
-                    }
+suspend fun collectGeminiResponse(
+    chatTopicDao: ChatTopicDao,
+    context: Context,
+    textResponseFlow: Any?,
+    responseMessageId: String,
+    topicId: String,
+    lastCreatedIndex: Int,
+    selectedGeminiModel: GenerativeModel,
+    textOnlyGeminiModel: GenerativeModel,
+    message: String,
+    requestMessageId: String,
+    isNewChat: Boolean,
+    error: String
+): String {
+    var errorMessage = error
+    coroutineScope {
+        val messageJob = async {
+            ensureActive()
+            if ((textResponseFlow as? GenerateContentResponse) != null) {
+                triggerHapticFeedback(context)
+                storeAndAppendResponse(
+                    responseMessageId,
+                    (textResponseFlow).text.toString(),
+                    topicId,
+                    lastCreatedIndex,
+                    GEMINI_VISION.modelName,
+                    listOf(),
+                    chatTopicDao
                 )
+                return@async
+            }
+            (textResponseFlow as? Flow<GenerateContentResponse>)?.collectLatest { chunk ->
+                chunk.text?.let {
+                    triggerHapticFeedback(context)
+                    storeAndAppendResponse(
+                        responseMessageId,
+                        it,
+                        topicId,
+                        lastCreatedIndex,
+                        GEMINI.modelName,
+                        listOf(),
+                        chatTopicDao
+                    )
+                }
+            } ?: selectedGeminiModel.generateContent(message).let { imageText ->
+                //gemini api does not yet picture output
+                imageText.text?.let {
+                    val image = storeImageInCache(
+                        imageUrl = it,
+                        isImageUrl = false,
+                        topicId = topicId,
+                        context = context
+                    )
+                    chatTopicDao.updateImageUrl(
+                        messageId = requestMessageId,
+                        imageUrl = listOf(image ?: ERROR)
+                    )
+                }
             }
         }
-        return contentList
-    }
+        if (isNewChat) {
+            val topicFlow =
+                textOnlyGeminiModel
+                    .generateContentStream("$SUMMARIZE_PROMPT $message")
+            val topicJob = async {
+                ensureActive()
+                topicFlow.collectLatest { chunk ->
+                    chunk.text?.let {
+                        storeAndAppendTopic(
+                            topicId,
+                            it,
+                            chatTopicDao
+                        )
+                    }
+                }
+            }
 
-    private suspend fun getGeminiResponseFlow(
-        history: List<Content> = listOf(),
-        bitmapList: List<Bitmap> = listOf(),
-        messageWrapper: MessageWrapper,
-        generativeModel: GenerativeModel
-    ): Any {
-        val contentToSend = content("user") {
-            bitmapList.map { bitmap ->
-                image(bitmap)
-            }
-            text(messageWrapper.message)
-        }
-        return if (messageWrapper.fileUris.isNotEmpty()) {
-            generativeModel.generateContent(contentToSend)
+            errorMessage = tryCatch(awaitAll(messageJob, topicJob))
         } else {
-            val chat = generativeModel.startChat(
-                history = history
-            )
-            chat.sendMessageStream(contentToSend)
+            errorMessage = tryCatch(messageJob.await())
         }
+    }
+    return errorMessage
+}
+
+fun loadHistoryToGemini(topicId: String, chatTopicDao: ChatTopicDao): MutableList<Content> {
+    val history = chatTopicDao.getAllChatsFromTopicNoPaging(topicId)
+    val index = history.indexOfLast { !it.isUserGenerated }
+    val mutableHistory = if (index == -1) {
+        listOf()
+    } else {
+        history.subList(0, index + 1)
+    }
+    val contentList: MutableList<Content> = mutableListOf()
+    mutableHistory.map {
+        if (it.imageUrls.isNotEmpty()) {
+            contentList.add(content(role = "user") {
+                text(it.expandedContent)
+            })
+            contentList.add(content(role = "model") {
+                text("The image created was found here ${it.imageUrls}")
+            })
+        } else {
+            contentList.add(
+                content(role = if (it.isUserGenerated) "user" else "model") {
+                    text(it.expandedContent)
+                }
+            )
+        }
+    }
+    return contentList
+}
+
+suspend fun getGeminiResponseFlow(
+    history: List<Content> = listOf(),
+    bitmapList: List<Bitmap> = listOf(),
+    messageWrapper: MessageWrapper,
+    generativeModel: GenerativeModel
+): Any {
+    val contentToSend = content("user") {
+        bitmapList.map { bitmap ->
+            image(bitmap)
+        }
+        text(messageWrapper.message)
+    }
+    return if (messageWrapper.fileUris.isNotEmpty()) {
+        generativeModel.generateContent(contentToSend)
+    } else {
+        val chat = generativeModel.startChat(
+            history = history
+        )
+        chat.sendMessageStream(contentToSend)
     }
 }

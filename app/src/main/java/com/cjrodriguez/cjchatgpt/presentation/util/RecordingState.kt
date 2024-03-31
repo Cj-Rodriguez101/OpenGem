@@ -6,3 +6,10 @@ enum class RecordingState {
     FINISHED,
     ERROR
 }
+
+enum class SpeakingState {
+    PROCESSING,
+    RECORDING,
+    SPEAKING,
+    ERROR
+}

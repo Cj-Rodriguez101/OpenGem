@@ -6,9 +6,11 @@ import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import java.io.File
 import java.io.FileOutputStream
@@ -20,10 +22,11 @@ class RecorderImpl @Inject constructor(
     private var mediaRecorder: MediaRecorder? = null
     private val _powerFlow: MutableStateFlow<Float> = MutableStateFlow(0f)
     private val _isRecording: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    private val isRecording = _isRecording.asStateFlow()
+    private var silenceStartTime: Long? = null
 
-    override fun startRecording() {
+    override fun startRecording(fileName: String) {
         try {
+            silenceStartTime = null
             mediaRecorder = if (VERSION.SDK_INT >= VERSION_CODES.S) {
                 MediaRecorder(context)
             } else {
@@ -33,8 +36,10 @@ class RecorderImpl @Inject constructor(
             mediaRecorder?.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioSamplingRate(44100)
+                setAudioEncodingBitRate(96000)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setOutputFile(FileOutputStream(File(context.cacheDir, "tmp.mp3")).fd)
+                setOutputFile(FileOutputStream(File(context.cacheDir, "$fileName.mp3")).fd)
                 prepare()
             }
             mediaRecorder?.start()
@@ -60,16 +65,26 @@ class RecorderImpl @Inject constructor(
 
     override fun getPowerLevel(): StateFlow<Float> = _powerFlow.asStateFlow()
 
-    override suspend fun updatePowerLevel() {
-        while (isRecording.value) {
-            delay(200L)
+    override fun updatePowerLevel(timeOut: Long): Flow<Boolean> = flow {
+        var shouldStopRecording = false
+        while (_isRecording.value) {
+            delay(100L)
             try {
                 mediaRecorder?.maxAmplitude?.let {
                     val normalizedValue = ((it / 32767f) * (500 - 100)) + 100
+                    if (it <= 1000 && silenceStartTime == null) {
+                        silenceStartTime = System.currentTimeMillis()
+                    } else if (it <= 1000 && System.currentTimeMillis() - silenceStartTime!! >= timeOut) {
+                        _isRecording.value = false
+                        shouldStopRecording = true
+                        silenceStartTime = null
+                    }
                     _powerFlow.update { normalizedValue }
                 }
             } catch (ex: Exception) {
                 Log.e("mediaRecorder", ex.message.toString())
+            } finally {
+                emit(shouldStopRecording)
             }
         }
     }
