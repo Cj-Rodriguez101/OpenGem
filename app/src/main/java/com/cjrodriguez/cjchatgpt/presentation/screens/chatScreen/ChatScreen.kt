@@ -105,6 +105,7 @@ import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.Voic
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.VoiceRecordingSegment
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.components.ZoomableComposable
 import com.cjrodriguez.cjchatgpt.presentation.ui.theme.CjChatGPTTheme
+import com.cjrodriguez.cjchatgpt.presentation.ui.theme.OrangeCustom
 import com.cjrodriguez.cjchatgpt.presentation.util.AiType
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.SpeakingState
@@ -240,11 +241,9 @@ fun ChatScreen(
                                 )
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.ai_icon),
+                                painter = painterResource(id = R.drawable.logo_brain),
                                 contentDescription = "ai", modifier = Modifier
-                                    .padding(16.dp)
-                                    .size(40.dp),
-                                colorFilter = ColorFilter.tint(color = MaterialTheme.colorScheme.onSurface)
+                                    .size(48.dp)
                             )
 
                             OutlinedButton(
@@ -501,7 +500,7 @@ fun ChatScreen(
                                             modifier = Modifier
                                                 .size(36.dp)
                                                 .background(
-                                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                                    color = OrangeCustom,
                                                     shape = CircleShape
                                                 ),
                                             contentAlignment = Alignment.Center

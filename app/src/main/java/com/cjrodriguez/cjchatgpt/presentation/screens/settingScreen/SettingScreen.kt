@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Key
@@ -140,7 +141,8 @@ fun SettingScreen(
                                     .padding(16.dp)
                             ) {
                                 Image(
-                                    painter = painterResource(id = drawable.gemmicon),
+                                    modifier = Modifier.size(48.dp),
+                                    painter = painterResource(id = drawable.logo_brain),
                                     contentDescription = stringResource(string.app_logo)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))

@@ -168,7 +168,8 @@ fun TopicScreen(
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
                                 ) {
                                     Text(
                                         text = stringResource(R.string.no_chats_present),

@@ -47,9 +47,6 @@ object AppModule {
     @Singleton
     @Provides
     fun provideChatDatabase(@ApplicationContext app: Context): ChatDatabase {
-//        return Room.databaseBuilder(
-//            app, ChatDatabase::class.java, CHAT_DB
-//        ).fallbackToDestructiveMigration().build()
         return ChatDatabaseInitializer().create(app)
     }
 

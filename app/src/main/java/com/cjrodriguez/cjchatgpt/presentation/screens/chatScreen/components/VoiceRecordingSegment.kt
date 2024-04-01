@@ -45,6 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.cjrodriguez.cjchatgpt.R.string
+import com.cjrodriguez.cjchatgpt.presentation.ui.theme.OrangeCustom
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.ERROR
 import com.cjrodriguez.cjchatgpt.presentation.util.RecordingState.RECORDING
@@ -84,7 +85,7 @@ fun VoiceRecordingSegment(
         modifier
             .height(keyboardHeight)
             .fillMaxWidth()
-            .background(color = MaterialTheme.colorScheme.primaryContainer)
+            .background(color = OrangeCustom)
             .padding(16.dp),
     ) {
         val (minimizeRef, errorColumnRefs, timerRef, recordingColumRefs, processingRefs) = createRefs()

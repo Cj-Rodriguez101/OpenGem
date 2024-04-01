@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.R.string
+import com.cjrodriguez.cjchatgpt.presentation.ui.theme.OrangeCustom
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -53,7 +54,7 @@ fun ZoomableComposable(
                 modifier = Modifier
                     .size(64.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primaryContainer,
+                        color = OrangeCustom,
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
