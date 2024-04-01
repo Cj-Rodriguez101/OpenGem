@@ -1,15 +1,17 @@
-# Cj_ChatGPT
+# OpenGem AI
 Gpt App Using OpenAI api and Gemini
 
 ## Features
-* Ask GPT 3.5, 4 and GEMINI any questions
+* Ask GPT 3.5, 4 and GEMINI (Use VPN for US Location)
 * Generate History Based On Summary
 * Copy Any Chat
 * Search And Filter History
 * Rename And Delete History
-* Chat - WIP
-* Whisper - WIP
+* Chat
+* Open AI Whisper
 * Generate and Store Images (DALL-E-3 works but Gemini Api does not support image generation yet) - WIP
+* Voice Chat
+* Analyze Image Input
 
 ## Architecture - MVVM
 ## Tools
@@ -20,6 +22,8 @@ Gpt App Using OpenAI api and Gemini
 * Datastore
 * Hilt
 * MediaRecorder
+* MediaPlayer
+* App startup
 
 ## To Build
 * Add your key to the local.properties file
