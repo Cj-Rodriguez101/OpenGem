@@ -52,14 +52,10 @@ class DeleteTopicAndChats @Inject constructor(
         }
     }
 
-    private fun deleteTopicIdFolder(context: Context, topicId: String): Boolean {
+    private fun deleteTopicIdFolder(context: Context, topicId: String) {
         val imagesDir = context.getExternalFilesDir(null)?.absolutePath
         val topicDir = File(imagesDir, "images/$topicId")
-
-        return if (topicDir.isDirectory) {
-            topicDir.deleteRecursively()
-        } else {
-            false // The folder was not found or it's not a directory
-        }
+        if (!topicDir.isDirectory) return
+        topicDir.deleteRecursively()
     }
 }

@@ -18,6 +18,7 @@ import com.aallam.openai.api.model.ModelId
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.util.ERROR
 import com.cjrodriguez.cjchatgpt.data.util.LOADING
@@ -43,6 +44,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import org.apache.commons.io.output.ByteArrayOutputStream
 import javax.inject.Inject
@@ -50,11 +52,12 @@ import javax.inject.Inject
 class GetOpenAiChatResponse @Inject constructor(
     private val context: Context,
     private val openApiConfig: OpenApiConfig,
-    private val chatTopicDao: ChatTopicDao
+    private val chatTopicDao: ChatTopicDao,
+    private val settingsDataStore: SettingsDataStore,
 ) {
     fun execute(
         messageWrapper: MessageWrapper,
-        isNewChat: Boolean,
+        //isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
         topicId: String,
         model: String
@@ -65,6 +68,7 @@ class GetOpenAiChatResponse @Inject constructor(
         var requestMessageId = ""
 
         try {
+            val isNewChat = chatTopicDao.getCountOfModelChatsInTopic(topicId) < 1
             if (!isCurrentlyConnectedToInternet) {
                 errorMessage = context.getString(R.string.no_internet_available)
                 emit(
@@ -81,6 +85,8 @@ class GetOpenAiChatResponse @Inject constructor(
                 )
                 return@flow
             }
+            val shouldTriggerHaptics = settingsDataStore.hapticFeedbackFlow.first()
+            val apiKey = settingsDataStore.openAiKeyFlow.first()
             requestMessageId = generateRandomId()
             val responseMessageId = generateRandomId()
             val bitmapList: List<Bitmap> = messageWrapper.fileUris.mapNotNull {
@@ -126,7 +132,8 @@ class GetOpenAiChatResponse @Inject constructor(
                         history = contentList,
                         bitmapList = bitmapList,
                         messageWrapper = messageWrapper,
-                        model = selectedModel
+                        model = selectedModel,
+                        apiKey = apiKey
                     )
                 }
             }
@@ -144,7 +151,9 @@ class GetOpenAiChatResponse @Inject constructor(
                 message,
                 requestMessageId,
                 isNewChat,
-                errorMessage
+                errorMessage,
+                shouldTriggerHaptics,
+                apiKey
             )
 
         } catch (ex: Exception) {
@@ -164,6 +173,7 @@ class GetOpenAiChatResponse @Inject constructor(
                     imageUrl = listOf(ERROR)
                 )
             }
+            chatTopicDao.deleteMessageId(requestMessageId)
             emit(
                 DataState.error(
                     message = GenericMessageInfo
@@ -179,9 +189,10 @@ class GetOpenAiChatResponse @Inject constructor(
 
 private suspend fun getImageFromOpenAiPrompt(
     prompt: String,
-    openApiConfig: OpenApiConfig
+    openApiConfig: OpenApiConfig,
+    apiKey: String
 ): List<ImageURL> {
-    return openApiConfig.openai.imageURL(
+    return openApiConfig.getOpenAiModel(apiKey).imageURL(
         ImageCreation(
             prompt = prompt,
             model = ModelId("dall-e-3"),
@@ -204,7 +215,9 @@ suspend fun collectOpenAiResponse(
     message: String,
     requestMessageId: String,
     isNewChat: Boolean,
-    error: String
+    error: String,
+    shouldTriggerHaptics: Boolean,
+    apiKey: String
 ): String {
     var errorMessage = error
     coroutineScope {
@@ -224,7 +237,7 @@ suspend fun collectOpenAiResponse(
             }
             (textResponseFlow as? Flow<ChatCompletionChunk>)?.collectLatest { chunk ->
                 chunk.choices[0].delta.content?.let {
-                    triggerHapticFeedback(context)
+                    triggerHapticFeedback(context, shouldTriggerHaptics)
                     storeAndAppendResponse(
                         messageId = responseMessageId,
                         it,
@@ -235,7 +248,11 @@ suspend fun collectOpenAiResponse(
                         chatTopicDao
                     )
                 }
-            } ?: getImageFromOpenAiPrompt(message, openApiConfig).let { imageUrls ->
+            } ?: getImageFromOpenAiPrompt(
+                message,
+                openApiConfig,
+                apiKey
+            ).let { imageUrls ->
                 if (imageUrls.isNotEmpty()) {
                     val images = imageUrls.map {
                         storeImageInCache(
@@ -261,7 +278,8 @@ suspend fun collectOpenAiResponse(
                         message = "$SUMMARIZE_PROMPT $message",
                         fileUris = listOf()
                     ),
-                    model = "gpt-3.5-turbo"
+                    model = "gpt-3.5-turbo",
+                    apiKey = apiKey
                 )
             val topicJob = async {
                 ensureActive()
@@ -289,7 +307,8 @@ suspend fun getOpenAiResponseFlow(
     history: List<ChatMessage> = listOf(),
     bitmapList: List<Bitmap> = listOf(),
     messageWrapper: MessageWrapper,
-    model: String
+    model: String,
+    apiKey: String
 ): Any {
     val mutableHistory = history.toMutableList()
     mutableHistory.add(
@@ -324,14 +343,14 @@ suspend fun getOpenAiResponseFlow(
         )
     )
     return if (messageWrapper.fileUris.isNotEmpty()) {
-        openApiConfig.openai.chatCompletion(
+        openApiConfig.getOpenAiModel(apiKey).chatCompletion(
             ChatCompletionRequest(
                 messages = mutableHistory.toList(),
                 model = ModelId(model)
             )
         )
     } else {
-        openApiConfig.openai.chatCompletions(
+        openApiConfig.getOpenAiModel(apiKey).chatCompletions(
             ChatCompletionRequest(
                 messages = mutableHistory.toList(),
                 model = ModelId(model)

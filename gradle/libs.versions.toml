@@ -33,8 +33,10 @@ markwon = "4.6.2"
 zoom = "1.6.0"
 material3 = "1.2.1"
 lottie = "5.2.0"
+startup = "1.1.1"
 
 [libraries]
+startup = { group = "androidx.startup", name = "startup-runtime", version.ref = "startup" }
 lottie = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie" }
 zoomable = { group = "net.engawapg.lib", name = "zoomable", version.ref = "zoom" }
 markdown-image = { group = "io.noties.markwon", name = "image", version.ref = "markwon" }

@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
 import com.cjrodriguez.cjchatgpt.data.util.ERROR
 import com.cjrodriguez.cjchatgpt.data.util.LOADING
@@ -35,17 +36,19 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class GetGeminiChatResponse @Inject constructor(
     private val context: Context,
     private val geminiModelApi: GeminiModelApi,
-    private val chatTopicDao: ChatTopicDao
+    private val chatTopicDao: ChatTopicDao,
+    private val settingsDataStore: SettingsDataStore,
 ) {
     fun execute(
         messageWrapper: MessageWrapper,
-        isNewChat: Boolean,
+        //isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
         topicId: String
     ): Flow<DataState<String>> = flow {
@@ -55,6 +58,7 @@ class GetGeminiChatResponse @Inject constructor(
 
         try {
             val message = messageWrapper.message
+            val isNewChat = chatTopicDao.getCountOfModelChatsInTopic(topicId) < 1
             if (!isCurrentlyConnectedToInternet) {
                 errorMessage = context.getString(R.string.no_internet_available)
                 emit(
@@ -71,6 +75,8 @@ class GetGeminiChatResponse @Inject constructor(
                 )
                 return@flow
             }
+            val shouldTriggerHaptics = settingsDataStore.hapticFeedbackFlow.first()
+            val apiKey = settingsDataStore.geminiKeyFlow.first()
             requestMessageId = generateRandomId()
             val responseMessageId = generateRandomId()
             val bitmapList: List<Bitmap> = messageWrapper.fileUris.mapNotNull {
@@ -78,7 +84,8 @@ class GetGeminiChatResponse @Inject constructor(
             }
             val shouldGenerateImage = shouldTriggerImageModel(message)
             val geminiModel = geminiModelApi.getGenerativeModel(
-                if (messageWrapper.fileUris.isNotEmpty()) "gemini-pro-vision" else GEMINI.modelName
+                if (messageWrapper.fileUris.isNotEmpty()) "gemini-pro-vision" else GEMINI.modelName,
+                apiKey
             )
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
             val fileUrls = bitmapList.mapNotNull { bitmap ->
@@ -128,11 +135,15 @@ class GetGeminiChatResponse @Inject constructor(
                 topicId,
                 lastCreatedIndex,
                 geminiModel,
-                geminiModelApi.getGenerativeModel(GEMINI.modelName),
+                geminiModelApi.getGenerativeModel(
+                    GEMINI.modelName,
+                    apiKey
+                ),
                 message,
                 requestMessageId,
                 isNewChat,
-                errorMessage
+                errorMessage,
+                shouldTriggerHaptics
             )
         } catch (ex: Exception) {
             errorMessage = ex.message.toString()
@@ -151,10 +162,8 @@ class GetGeminiChatResponse @Inject constructor(
                     imageUrl = listOf(ERROR)
                 )
             }
+            chatTopicDao.deleteMessageId(requestMessageId)
 
-            if (errorMessage.isNotEmpty()) {
-                chatTopicDao.deleteMessageId(requestMessageId)
-            }
             emit(
                 DataState.error(
                     message = GenericMessageInfo
@@ -181,14 +190,15 @@ suspend fun collectGeminiResponse(
     message: String,
     requestMessageId: String,
     isNewChat: Boolean,
-    error: String
+    error: String,
+    shouldTriggerHaptics: Boolean
 ): String {
     var errorMessage = error
     coroutineScope {
         val messageJob = async {
             ensureActive()
             if ((textResponseFlow as? GenerateContentResponse) != null) {
-                triggerHapticFeedback(context)
+                triggerHapticFeedback(context, shouldTriggerHaptics)
                 storeAndAppendResponse(
                     responseMessageId,
                     (textResponseFlow).text.toString(),
@@ -202,7 +212,7 @@ suspend fun collectGeminiResponse(
             }
             (textResponseFlow as? Flow<GenerateContentResponse>)?.collectLatest { chunk ->
                 chunk.text?.let {
-                    triggerHapticFeedback(context)
+                    triggerHapticFeedback(context, shouldTriggerHaptics)
                     storeAndAppendResponse(
                         responseMessageId,
                         it,

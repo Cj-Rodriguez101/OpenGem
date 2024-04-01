@@ -11,8 +11,10 @@ import com.cjrodriguez.cjchatgpt.interactors.DeleteTopicAndChats
 import com.cjrodriguez.cjchatgpt.interactors.RenameTopic
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.toTopic
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class TopicRepositoryImpl @Inject constructor(
@@ -35,6 +37,10 @@ class TopicRepositoryImpl @Inject constructor(
 
     override fun deleteTopic(topicId: String): Flow<DataState<String>> {
         return deleteTopicAndChats.execute(topicId)
+    }
+
+    override fun deleteAllTopics() {
+        dao.deleteAllTopics()
     }
 
     override fun renameTopic(topic: TopicEntity): Flow<DataState<Unit>> {

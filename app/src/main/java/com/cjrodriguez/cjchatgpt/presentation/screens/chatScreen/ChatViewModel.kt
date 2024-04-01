@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.presentation.viewmodels
+package com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen
 
 import android.content.ContentResolver
 import android.net.Uri
@@ -256,7 +256,7 @@ class ChatViewModel @Inject constructor(
 
             is UpdatePowerLevel -> {
                 viewModelScope.launch {
-                    withContext(Dispatchers.IO) {
+                    withContext(coroutineDispatcher) {
                         val shouldStopRecording =
                             chatRepository.updatePowerLevel(events.timeout).first()
                         if (shouldStopRecording) stopRecording()
@@ -266,7 +266,7 @@ class ChatViewModel @Inject constructor(
 
             is StartVoiceChat -> {
                 viewModelScope.launch {
-                    withContext(Dispatchers.IO) {
+                    withContext(coroutineDispatcher) {
                         if (events.isNewChat) {
                             _selectedTopicId.value = generateRandomId()
                         }
@@ -278,7 +278,6 @@ class ChatViewModel @Inject constructor(
                             chatRepository.setRecordingState(false)
                             chatRepository.stopRecording()
                             getAndPlayAiResponse(
-                                events.isNewChat,
                                 events.isCurrentlyConnectedToInternet
                             )
                         }
@@ -294,9 +293,8 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getAndPlayAiResponse(isNewChat: Boolean, status: Status) {
+    private suspend fun getAndPlayAiResponse(status: Status) {
         chatRepository.getAndPlayAiResponse(
-            isNewChat = isNewChat,
             isCurrentlyConnectedToInternet = status == Status.Available,
             topicId = _selectedTopicId.value,
             model = aiType.value.modelName,
@@ -325,10 +323,8 @@ class ChatViewModel @Inject constructor(
         status: Status,
         fileUris: List<String>
     ) {
-        var isNewChat = false
         if (_selectedTopicId.value.isEmpty()) {
             _selectedTopicId.value = generateRandomId()
-            isNewChat = true
         }
 
         _cancellableCoroutineScope.value = viewModelScope.launch {
@@ -344,14 +340,12 @@ class ChatViewModel @Inject constructor(
                 val responseFlow = when (aiType.value) {
                     AiType.GEMINI -> chatRepository.getAndStoreGeminiResponse(
                         message = messageWrapper,
-                        isNewChat = isNewChat,
                         isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend
                     )
 
                     else -> chatRepository.getAndStoreOpenAiChatResponse(
                         message = messageWrapper,
-                        isNewChat = isNewChat,
                         isCurrentlyConnectedToInternet = isConnectedToInternet,
                         topicId = topicIdToSend,
                         model = aiType.value.modelName

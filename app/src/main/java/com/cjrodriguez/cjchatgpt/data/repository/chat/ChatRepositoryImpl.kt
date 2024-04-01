@@ -39,14 +39,12 @@ class ChatRepositoryImpl @Inject constructor(
 ) : ChatRepository {
 
     override fun getAndPlayAiResponse(
-        isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
         topicId: String,
         model: String,
         isOpenAi: Boolean
     ): Flow<DataState<SoundAndTopicId>> {
         return getAndPlayAiResponse.execute(
-            isNewChat,
             isCurrentlyConnectedToInternet,
             topicId,
             model,
@@ -55,14 +53,12 @@ class ChatRepositoryImpl @Inject constructor(
     }
     override fun getAndStoreOpenAiChatResponse(
         message: MessageWrapper,
-        isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean,
         model: String
     ): Flow<DataState<String>> {
         return getOpenAiChatResponse.execute(
             message,
-            isNewChat,
             isCurrentlyConnectedToInternet,
             topicId,
             model
@@ -71,13 +67,11 @@ class ChatRepositoryImpl @Inject constructor(
 
     override fun getAndStoreGeminiResponse(
         message: MessageWrapper,
-        isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean
     ): Flow<DataState<String>> {
         return getGeminiChatResponse.execute(
             message,
-            isNewChat,
             isCurrentlyConnectedToInternet,
             topicId
         )
@@ -127,7 +121,7 @@ class ChatRepositoryImpl @Inject constructor(
         recorder.setRecordingState(isRecordingState)
     }
 
-    override suspend fun updatePowerLevel(timeout: Long): Flow<Boolean> {
+    override fun updatePowerLevel(timeout: Long): Flow<Boolean> {
         return recorder.updatePowerLevel(timeout)
     }
 

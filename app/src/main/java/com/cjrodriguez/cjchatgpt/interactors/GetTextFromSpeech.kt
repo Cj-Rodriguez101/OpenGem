@@ -6,11 +6,13 @@ import com.aallam.openai.api.audio.TranscriptionRequest
 import com.aallam.openai.api.file.FileSource
 import com.aallam.openai.api.model.ModelId
 import com.cjrodriguez.cjchatgpt.R.string
+import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.presentation.util.DataState
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import okio.buffer
 import okio.source
@@ -20,13 +22,15 @@ import javax.inject.Inject
 
 class GetTextFromSpeech @Inject constructor(
     private val context: Context,
-    private val openAIConfig: OpenApiConfig
+    private val openAIConfig: OpenApiConfig,
+    private val settingsDataStore: SettingsDataStore
 ) {
     @SuppressLint("MissingPermission")
     fun execute(): Flow<DataState<String>> = flow {
         emit(DataState.loading())
 
         try {
+            val apiKey = settingsDataStore.openAiKeyFlow.first()
             val fileToDeleted = File(context.cacheDir, "tmp.mp3")
             val source = fileToDeleted.getRecordingSource()
             val request = TranscriptionRequest(
@@ -34,7 +38,7 @@ class GetTextFromSpeech @Inject constructor(
                 model = ModelId("whisper-1"),
             )
 
-            val transcription = openAIConfig.openai.transcription(request)
+            val transcription = openAIConfig.getOpenAiModel(apiKey).transcription(request)
             fileToDeleted.delete()
             emit(DataState.data(data = transcription.text))
         } catch (ex: Exception) {

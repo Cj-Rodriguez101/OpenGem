@@ -11,6 +11,8 @@ import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.NetworkC
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepository
 import com.cjrodriguez.cjchatgpt.data.repository.chat.ChatRepositoryImpl
+import com.cjrodriguez.cjchatgpt.data.repository.settings.SettingsRepository
+import com.cjrodriguez.cjchatgpt.data.repository.settings.SettingsRepositoryImpl
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepository
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepositoryImpl
 import com.cjrodriguez.cjchatgpt.interactors.CopyTextToClipBoard
@@ -37,12 +39,14 @@ object InteractorsModule {
     fun provideGetOpenAiChatResponse(
         baseApplication: BaseApplication,
         openApiConfig: OpenApiConfig,
-        chatTopicDao: ChatTopicDao
+        chatTopicDao: ChatTopicDao,
+        settingsDataStore: SettingsDataStore
     ): GetOpenAiChatResponse {
         return GetOpenAiChatResponse(
             baseApplication.applicationContext,
             openApiConfig,
-            chatTopicDao
+            chatTopicDao,
+            settingsDataStore
         )
     }
 
@@ -51,12 +55,14 @@ object InteractorsModule {
     fun provideGetGeminiChatResponse(
         baseApplication: BaseApplication,
         geminiModelApi: GeminiModelApi,
-        chatTopicDao: ChatTopicDao
+        chatTopicDao: ChatTopicDao,
+        settingsDataStore: SettingsDataStore
     ): GetGeminiChatResponse {
         return GetGeminiChatResponse(
             baseApplication.applicationContext,
             geminiModelApi,
-            chatTopicDao
+            chatTopicDao,
+            settingsDataStore
         )
     }
 
@@ -66,13 +72,15 @@ object InteractorsModule {
         baseApplication: BaseApplication,
         openApiConfig: OpenApiConfig,
         geminiModelApi: GeminiModelApi,
-        chatTopicDao: ChatTopicDao
+        chatTopicDao: ChatTopicDao,
+        settingsDataStore: SettingsDataStore
     ): GetAndPlayAiResponse {
         return GetAndPlayAiResponse(
             baseApplication.applicationContext,
             openApiConfig,
             geminiModelApi,
-            chatTopicDao
+            chatTopicDao,
+            settingsDataStore
         )
     }
 
@@ -164,6 +172,14 @@ object InteractorsModule {
 
     @ViewModelScoped
     @Provides
+    fun provideSettingsRepository(
+        settingsDataStore: SettingsDataStore
+    ): SettingsRepository {
+        return SettingsRepositoryImpl(settingsDataStore)
+    }
+
+    @ViewModelScoped
+    @Provides
     fun provideLocalClipBoardManager(baseApplication: BaseApplication): ClipboardManager {
         return baseApplication.applicationContext
             .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -173,9 +189,14 @@ object InteractorsModule {
     @Provides
     fun provideGetTextFromSpeech(
         baseApplication: BaseApplication,
-        openApiConfig: OpenApiConfig
+        openApiConfig: OpenApiConfig,
+        settingsDataStore: SettingsDataStore
     ): GetTextFromSpeech {
-        return GetTextFromSpeech(baseApplication.applicationContext, openApiConfig)
+        return GetTextFromSpeech(
+            baseApplication.applicationContext,
+            openApiConfig,
+            settingsDataStore
+        )
     }
 
     @ViewModelScoped

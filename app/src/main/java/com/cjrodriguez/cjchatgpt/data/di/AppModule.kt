@@ -1,17 +1,17 @@
 package com.cjrodriguez.cjchatgpt.data.di
 
 import android.content.Context
-import androidx.room.Room
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.Player
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.PlayerImpl
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.Recorder
 import com.cjrodriguez.cjchatgpt.data.datasource.audio.RecorderImpl
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatDatabase
+import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatDatabaseInitializer
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
+import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStoreInitializer
 import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
-import com.cjrodriguez.cjchatgpt.data.util.CHAT_DB
 import com.cjrodriguez.cjchatgpt.presentation.BaseApplication
 import dagger.Module
 import dagger.Provides
@@ -47,9 +47,10 @@ object AppModule {
     @Singleton
     @Provides
     fun provideChatDatabase(@ApplicationContext app: Context): ChatDatabase {
-        return Room.databaseBuilder(
-            app, ChatDatabase::class.java, CHAT_DB
-        ).fallbackToDestructiveMigration().build()
+//        return Room.databaseBuilder(
+//            app, ChatDatabase::class.java, CHAT_DB
+//        ).fallbackToDestructiveMigration().build()
+        return ChatDatabaseInitializer().create(app)
     }
 
     @Singleton
@@ -61,7 +62,7 @@ object AppModule {
     @Singleton
     @Provides
     fun provideSettingsDatastore(baseApplication: BaseApplication): SettingsDataStore {
-        return SettingsDataStore(baseApplication)
+        return SettingsDataStoreInitializer().create(baseApplication)
     }
 
     @Singleton

@@ -32,8 +32,12 @@ import java.net.URL
 const val GPT_3 = "GPT3"
 const val CHAT_DB = "Chat.db"
 const val GPT_VERSION_KEY = "gptVersionKey"
+const val OPEN_AI_KEY = "openAiKey"
+const val GEMINI_AI_KEY = "geminiAiKey"
+const val HAPTIC_FEEDBACK_KEY = "hapticFeedbackKey"
 const val CHAT_SCREEN = "chatScreen"
 const val TOPIC_SCREEN = "topicScreen"
+const val SETTINGS_SCREEN = "settingsScreen"
 const val GPT_SETTINGS = "settings"
 const val PRE_TAG = "pre-wrap"
 const val CHAT_KEY = "key"
@@ -301,7 +305,11 @@ fun createBitmapFromContentUri(context: Context, contentUri: String): Bitmap? {
     return bitmap
 }
 
-fun triggerHapticFeedback(context: Context) {
+fun triggerHapticFeedback(
+    context: Context,
+    shouldTriggerHaptics: Boolean
+) {
+    if (!shouldTriggerHaptics) return
     val vibrator = if (VERSION.SDK_INT >= VERSION_CODES.S) {
         (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
     } else {

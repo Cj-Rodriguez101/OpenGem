@@ -14,7 +14,6 @@ interface ChatRepository {
 
     fun getAndStoreOpenAiChatResponse(
         message: MessageWrapper,
-        isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean,
         model: String
@@ -22,7 +21,6 @@ interface ChatRepository {
 
     fun getAndStoreGeminiResponse(
         message: MessageWrapper,
-        isNewChat: Boolean,
         topicId: String,
         isCurrentlyConnectedToInternet: Boolean
     ): Flow<DataState<String>>
@@ -45,10 +43,9 @@ interface ChatRepository {
 
     fun setRecordingState(isRecordingState: Boolean)
 
-    suspend fun updatePowerLevel(timeout: Long): Flow<Boolean>
+    fun updatePowerLevel(timeout: Long): Flow<Boolean>
 
     fun getAndPlayAiResponse(
-        isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
         topicId: String,
         model: String,

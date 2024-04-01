@@ -3,6 +3,7 @@ package com.cjrodriguez.cjchatgpt.presentation.navigation
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,11 +19,14 @@ import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.Connecti
 import com.cjrodriguez.cjchatgpt.data.util.CHAT_KEY
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
 import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatScreen
+import com.cjrodriguez.cjchatgpt.presentation.screens.settingScreen.SettingScreen
 import com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen.TopicScreen
-import com.cjrodriguez.cjchatgpt.presentation.viewmodels.ChatViewModel
-import com.cjrodriguez.cjchatgpt.presentation.viewmodels.TopicViewModel
+import com.cjrodriguez.cjchatgpt.presentation.screens.chatScreen.ChatViewModel
+import com.cjrodriguez.cjchatgpt.presentation.screens.settingScreen.SettingsViewModel
+import com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen.TopicViewModel
 import kotlinx.collections.immutable.toImmutableSet
 
+@ExperimentalMaterial3Api
 @Composable
 fun Navigation(status: ConnectivityObserver.Status) {
     val navController = rememberNavController()
@@ -79,6 +83,7 @@ fun Navigation(status: ConnectivityObserver.Status) {
                 imageZoomedInPath = imageZoomedInPath,
                 topicId = topicId,
                 hasFinishedPlayingAudio = hasFinishedPlayingAudio,
+                navigateToSettingsPage = { navController.navigate(route = Screen.SettingsScreen.route) },
                 navigateToHistoryScreen =
                 { navController.navigate(route = Screen.TopicScreen.route + "/{$it}") },
                 onTriggerEvent = chatViewModel::onTriggerEvent
@@ -95,7 +100,9 @@ fun Navigation(status: ConnectivityObserver.Status) {
             val topicViewModel = hiltViewModel<TopicViewModel>()
             val query by topicViewModel.query.collectAsStateWithLifecycle()
             val messageSet by topicViewModel.messageSet.collectAsStateWithLifecycle()
-            TopicScreen(query = query, onTriggerEvents = topicViewModel::onTriggerEvent,
+            TopicScreen(
+                query = query,
+                onTriggerEvents = topicViewModel::onTriggerEvent,
                 messageSet = messageSet.toImmutableSet(),
                 allTopics = topicViewModel.topicPagingFlow.collectAsLazyPagingItems(),
                 setIdToNavigateToAndOnBackPressed = {
@@ -105,6 +112,30 @@ fun Navigation(status: ConnectivityObserver.Status) {
                     )
                     navController.popBackStack()
                 })
+        }
+
+        composable(
+            route = Screen.SettingsScreen.route,
+            enterTransition = { EnterTransition() },
+            exitTransition = { ExitTransition() },
+            popEnterTransition = { PopEnterTransition() },
+            popExitTransition = { PopExitTransition() },
+        ) {
+            val settingsViewModel = hiltViewModel<SettingsViewModel>()
+            val openAiKey by settingsViewModel.openAiKey.collectAsStateWithLifecycle()
+            val geminiKey by settingsViewModel.geminiKey.collectAsStateWithLifecycle()
+            val messageSet by settingsViewModel.messageSet.collectAsStateWithLifecycle()
+            val shouldEnableHaptics by settingsViewModel.shouldEnableHaptics.collectAsStateWithLifecycle(
+                false
+            )
+            SettingScreen(
+                openAiKey = openAiKey,
+                geminiKey = geminiKey,
+                onBackPressed = { navController.popBackStack() },
+                onTriggerEvents = settingsViewModel::onTriggerEvent,
+                messageSet = messageSet.toImmutableSet(),
+                shouldEnableHaptics = shouldEnableHaptics
+            )
         }
     }
 }

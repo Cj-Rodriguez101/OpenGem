@@ -10,6 +10,7 @@ import com.aallam.openai.api.model.ModelId
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.ChatTopicDao
 import com.cjrodriguez.cjchatgpt.data.datasource.cache.model.ChatEntity
+import com.cjrodriguez.cjchatgpt.data.datasource.dataStore.SettingsDataStore
 import com.cjrodriguez.cjchatgpt.data.datasource.network.gemini.GeminiModelApi
 import com.cjrodriguez.cjchatgpt.data.datasource.network.open_ai.OpenApiConfig
 import com.cjrodriguez.cjchatgpt.data.util.ERROR
@@ -22,6 +23,7 @@ import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.UIComponentType
 import com.google.ai.client.generativeai.type.Content
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import java.io.File
 import java.io.FileOutputStream
@@ -31,10 +33,11 @@ class GetAndPlayAiResponse @Inject constructor(
     private val context: Context,
     private val openApiConfig: OpenApiConfig,
     private val geminiModelApi: GeminiModelApi,
-    private val chatTopicDao: ChatTopicDao
+    private val chatTopicDao: ChatTopicDao,
+    private val settingsDataStore: SettingsDataStore
 ) {
     fun execute(
-        isNewChat: Boolean,
+        //isNewChat: Boolean,
         isCurrentlyConnectedToInternet: Boolean,
         topicId: String,
         model: String,
@@ -44,6 +47,7 @@ class GetAndPlayAiResponse @Inject constructor(
         var errorMessage = ""
         var requestMessageId = ""
         try {
+            val isNewChat = chatTopicDao.getCountOfModelChatsInTopic(topicId) < 1
             if (!isCurrentlyConnectedToInternet) {
                 errorMessage = context.getString(R.string.no_internet_available)
                 emit(
@@ -58,6 +62,9 @@ class GetAndPlayAiResponse @Inject constructor(
                 )
                 return@flow
             }
+            val shouldTriggerHaptics = settingsDataStore.hapticFeedbackFlow.first()
+            val openAiKey = settingsDataStore.openAiKeyFlow.first()
+            val geminiKey = settingsDataStore.geminiKeyFlow.first()
             requestMessageId = generateRandomId()
             val responseMessageId = generateRandomId()
             val lastCreatedIndex = chatTopicDao.getMaxTimeCreatedAtWithTopic(topicId) ?: 0
@@ -67,7 +74,7 @@ class GetAndPlayAiResponse @Inject constructor(
                 audio = FileSource(name = fileToDeleted.name, source = source),
                 model = ModelId("whisper-1"),
             )
-            val transcription = openApiConfig.openai.transcription(request)
+            val transcription = openApiConfig.getOpenAiModel(openAiKey).transcription(request)
             fileToDeleted.delete()
             val voiceInputMessage = transcription.text
             chatTopicDao.insertChatResponse(
@@ -80,7 +87,10 @@ class GetAndPlayAiResponse @Inject constructor(
                 )
             )
             val messageWrapper =
-                MessageWrapper(message = "\"$voiceInputMessage\", respond directly and conclude by asking if there's another request.")
+                MessageWrapper(
+                    message = "\"$voiceInputMessage\", " +
+                            "respond directly and conclude by asking if there's another request."
+                )
 
             if (isOpenAi) {
                 val contentList: MutableList<ChatMessage> =
@@ -90,7 +100,8 @@ class GetAndPlayAiResponse @Inject constructor(
                         openApiConfig = openApiConfig,
                         history = contentList,
                         messageWrapper = messageWrapper,
-                        model = model
+                        model = model,
+                        apiKey = openAiKey
                     )
                 errorMessage = collectOpenAiResponse(
                     chatTopicDao,
@@ -105,11 +116,16 @@ class GetAndPlayAiResponse @Inject constructor(
                     voiceInputMessage,
                     requestMessageId,
                     isNewChat,
-                    errorMessage
+                    errorMessage,
+                    shouldTriggerHaptics,
+                    openAiKey
                 )
 
             } else {
-                val geminiModel = geminiModelApi.getGenerativeModel(GEMINI.modelName)
+                val geminiModel = geminiModelApi.getGenerativeModel(
+                    GEMINI.modelName,
+                    geminiKey
+                )
                 val textResponseFlow = when {
                     isNewChat -> getGeminiResponseFlow(
                         messageWrapper = messageWrapper,
@@ -139,14 +155,15 @@ class GetAndPlayAiResponse @Inject constructor(
                     voiceInputMessage,
                     requestMessageId,
                     isNewChat,
-                    errorMessage
+                    errorMessage,
+                    shouldTriggerHaptics
                 )
             }
             chatTopicDao.getSpecificChat(
                 topicId = topicId,
                 messageId = responseMessageId
             )?.let {
-                val rawAudio = openApiConfig.openai.speech(
+                val rawAudio = openApiConfig.getOpenAiModel(openAiKey).speech(
                     request = SpeechRequest(
                         model = ModelId("tts-1"),
                         input = it.expandedContent,
@@ -179,6 +196,7 @@ class GetAndPlayAiResponse @Inject constructor(
                     imageUrl = listOf(ERROR)
                 )
             }
+            chatTopicDao.deleteMessageId(requestMessageId)
             emit(
                 DataState.error(
                     message = GenericMessageInfo

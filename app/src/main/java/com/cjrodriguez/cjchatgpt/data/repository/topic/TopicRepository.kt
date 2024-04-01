@@ -12,5 +12,7 @@ interface TopicRepository {
 
     fun deleteTopic(topicId: String): Flow<DataState<String>>
 
+    fun deleteAllTopics()
+
     fun renameTopic(topic: TopicEntity): Flow<DataState<Unit>>
 }

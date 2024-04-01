@@ -37,4 +37,17 @@
   <string name="create_image_tip">Create Image Tip</string>
   <string name="create_image">Create Image</string>
   <string name="to_create_an_image_type">"To create an image type "</string>
+  <string name="gemini_ai_key">Gemini Ai Key</string>
+  <string name="save">Save</string>
+  <string name="open_ai_key">Open Ai Key</string>
+  <string name="app_logo">App Logo</string>
+  <string name="back">Back</string>
+  <string name="settings">Settings</string>
+  <string name="change_api_key">Change Api key</string>
+  <string name="keys">Keys</string>
+  <string name="search">Search</string>
+  <string name="api_key">Api Key</string>
+  <string name="clear_history">Clear History</string>
+  <string name="haptic_feedback">Haptic Feedback</string>
+  <string name="toggle_haptics">Toggle haptics</string>
 </resources>

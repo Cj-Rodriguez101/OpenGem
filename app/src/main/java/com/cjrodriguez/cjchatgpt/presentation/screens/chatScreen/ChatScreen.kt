@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
@@ -83,6 +84,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import com.cjrodriguez.cjchatgpt.R
 import com.cjrodriguez.cjchatgpt.R.string
+import com.cjrodriguez.cjchatgpt.R.string.settings
 import com.cjrodriguez.cjchatgpt.data.datasource.network.internet_check.ConnectivityObserver
 import com.cjrodriguez.cjchatgpt.data.util.revertHtmlToPlainText
 import com.cjrodriguez.cjchatgpt.domain.events.ChatListEvents
@@ -134,6 +136,7 @@ fun ChatScreen(
     upperLimit: Int,
     circlePowerLevel: Float,
     errorMessage: UiText,
+    navigateToSettingsPage: () -> Unit,
     navigateToHistoryScreen: (String) -> Unit,
     onTriggerEvent: (ChatListEvents) -> Unit
 ) {
@@ -297,6 +300,33 @@ fun ChatScreen(
                                         imageVector = Icons.Outlined.History,
                                         contentDescription = context.getString(
                                             R.string.history
+                                        )
+                                    )
+                                }
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch { drawerState.close() }
+                                    navigateToSettingsPage()
+                                },
+                                modifier = Modifier
+                                    .width(200.dp)
+                                    .padding(16.dp),
+                                shape = CardDefaults.shape
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = context.getString(settings))
+                                    Icon(
+                                        imageVector = Icons.Outlined.Settings,
+                                        contentDescription = context.getString(
+                                            settings
                                         )
                                     )
                                 }

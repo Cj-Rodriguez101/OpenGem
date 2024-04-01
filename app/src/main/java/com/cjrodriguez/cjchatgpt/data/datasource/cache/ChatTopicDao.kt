@@ -32,6 +32,9 @@ interface ChatTopicDao {
     @Query("DELETE FROM topicTable WHERE id =:id")
     fun deleteTopicId(id: String)
 
+    @Query("DELETE FROM topicTable")
+    fun deleteAllTopics()
+
     @Query("DELETE FROM chatTable WHERE messageId =:messageId")
     fun deleteMessageId(messageId: String)
 
@@ -54,7 +57,10 @@ interface ChatTopicDao {
     @Query("UPDATE topicTable SET title = title || :textToAppend WHERE id = :topicId")
     fun appendTextToTopicTitle(topicId: String, textToAppend: String): Int
 
-    @Query("SELECT * FROM chatTable WHERE topicId =:topicId AND messageId =:messageId ORDER BY lastCreatedIndex DESC LIMIT 1")
+    @Query(
+        "SELECT * FROM chatTable WHERE topicId =:topicId AND messageId =:messageId " +
+                "ORDER BY lastCreatedIndex DESC LIMIT 1"
+    )
     fun getSpecificChat(topicId: String, messageId: String): ChatEntity?
 
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex DESC")
@@ -62,6 +68,10 @@ interface ChatTopicDao {
 
     @Query("SELECT * FROM chatTable WHERE topicId =:topicId ORDER BY lastCreatedIndex")
     fun getAllChatsFromTopicNoPaging(topicId: String): List<ChatEntity>
+
+    @Query("SELECT COUNT(*) FROM chatTable WHERE topicId = :topicId AND isUserGenerated = 0")
+    fun getCountOfModelChatsInTopic(topicId: String): Int
+
 
     @Query("SELECT * FROM chatTable WHERE topicId = :topicId AND lastCreatedIndex >= :startIndex ORDER BY lastCreatedIndex ASC")
     fun getAllChatsFromTopicStartingAfterIndex(

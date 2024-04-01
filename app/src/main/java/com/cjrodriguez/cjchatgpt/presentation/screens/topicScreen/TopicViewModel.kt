@@ -1,4 +1,4 @@
-package com.cjrodriguez.cjchatgpt.presentation.viewmodels
+package com.cjrodriguez.cjchatgpt.presentation.screens.topicScreen
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
@@ -9,6 +9,7 @@ import androidx.paging.cachedIn
 import com.cjrodriguez.cjchatgpt.data.repository.topic.TopicRepository
 import com.cjrodriguez.cjchatgpt.data.util.SUCCESS
 import com.cjrodriguez.cjchatgpt.domain.events.TopicListEvents
+import com.cjrodriguez.cjchatgpt.domain.events.TopicListEvents.ClearAllChatsInTopic
 import com.cjrodriguez.cjchatgpt.domain.model.Topic
 import com.cjrodriguez.cjchatgpt.presentation.util.GenericMessageInfo
 import com.cjrodriguez.cjchatgpt.presentation.util.toTopicEntity
@@ -59,6 +60,10 @@ class TopicViewModel @Inject constructor(
                 _currentTopicId.value = events.topicId
             }
 
+            is ClearAllChatsInTopic -> {
+                clearAllHistory()
+            }
+
             is TopicListEvents.DeleteTopic -> {
                 deleteTopic(events.topicId)
             }
@@ -69,6 +74,14 @@ class TopicViewModel @Inject constructor(
 
             is TopicListEvents.OnRemoveHeadMessageFromQueue -> {
                 removeHeadMessageFromQueue()
+            }
+        }
+    }
+
+    private fun clearAllHistory() {
+        viewModelScope.launch {
+            withContext(coroutineDispatcher) {
+                topicRepository.deleteAllTopics()
             }
         }
     }
