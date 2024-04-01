@@ -25,9 +25,12 @@ Gpt App Using OpenAI api and Gemini
 * MediaPlayer
 * App startup
 
+## To Test
+Settings -> Api Keys -> Put Api Keys Here
+
 ## To Build
 * Add your key to the local.properties file
-* `OPEN_AI_API_KEY=your api key`
+* `OPEN_AI_API_KEY=your api key` (Set Key in settings)
 * `GEMINI_AI_API_KEY=your api key`
 * Update AGP if necessary
 
@@ -37,15 +40,13 @@ Gpt App Using OpenAI api and Gemini
 * Observe Internet Connectivty By [Philipp Lackner](https://github.com/philipplackner/ObserveConnectivity/blob/master/app/src/main/java/com/plcoding/observeconnectivity/)
 
 
-* [chat_image.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/047d7ca7-27bc-4f85-84a2-c9c043c0887d)
-* [broke.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/ebb99a98-244c-40ff-9df9-ed6d1698129e)
-* [image stored.webm](https://github.com/Cj-Rodriguez101/Cj_ChatGPT/assets/56259892/bb662368-ccc0-47aa-84eb-d7a0f9ccaf8e)
 
 <p align="center"
 float="center">
-<img src="https://github.com/Cj-Rodriguez101/Cj_ChatGPT/blob/master/screenshots/Screenshot_20230822_023321_Cj%20ChatGPT.jpg" width="270" height="480"/>
-<img src="https://github.com/Cj-Rodriguez101/Cj_ChatGPT/blob/master/screenshots/Screenshot_20230822_023305_Cj%20ChatGPT.jpg" width="270" height="480"/>
-<img src="https://github.com/Cj-Rodriguez101/Cj_ChatGPT/blob/master/screenshots/Screenshot_20230822_023346_Cj%20ChatGPT.jpg" width="270" height="480"/>
-<img src="https://github.com/Cj-Rodriguez101/Cj_ChatGPT/blob/master/screenshots/Screenshot_20230822_023352_Cj%20ChatGPT.jpg" width="270" height="480"/>
-<img src="https://github.com/Cj-Rodriguez101/Cj_ChatGPT/blob/master/screenshots/Screenshot_20230822_021800_Cj%20ChatGPT.jpg" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/84efb837-ac11-49a0-a5d1-7a1824859585" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/3fb7cee4-46b6-41db-8a71-f8624dcd8eb5" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/46817f79-edd0-4fe7-9b93-477785027b51" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/081b69a4-13d9-4978-9ac7-4603bfc524f0" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/d3cd2d44-5221-4bd2-a979-546b6e5de1b7" width="270" height="480"/>
+<img src="https://github.com/Cj-Rodriguez101/OpenGem/assets/56259892/c8b6499c-1392-48e2-b068-b131052c0b88" width="270" height="480"/>
 </p>
