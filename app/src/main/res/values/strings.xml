@@ -1,5 +1,5 @@
 <resources>
-  <string name="app_name">GemAi</string>
+  <string name="app_name">OpenGem AI</string>
     <string name="clear_text">Clear Text</string>
     <string name="send">Send</string>
     <string name="text_is_too_long">Text Is Too Long</string>
