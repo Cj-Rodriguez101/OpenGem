@@ -244,7 +244,8 @@ fun SettingsCard(
                         centerVerticallyTo(parent)
                     },
                     checked = checkedStatus,
-                    onCheckedChange = { onClick() })
+                    onCheckedChange = { onClick() },
+                )
             }
         }
     }

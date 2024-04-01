@@ -374,7 +374,6 @@ fun ChatScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(paddingValues)
-                            //.verticalScroll(scrollState)
                         ) {
                             val (
                                 switch,
@@ -385,7 +384,8 @@ fun ChatScreen(
                                 scrollFab
                             ) = createRefs()
 
-                            AiTextSwitch(selectedAi = selectedAiType,
+                            AiTextSwitch(
+                                selectedAi = selectedAiType,
                                 changeSelectedItem = {
                                     onTriggerEvent(
                                         ChatListEvents.SetGptVersion(

@@ -39,8 +39,15 @@ fun AiTextSwitch(
             Modifier
                 .height(40.dp)
                 .width(250.dp)
-                .background(Color.Transparent, MaterialTheme.shapes.large)
-                .border(1.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.large)
+                .background(
+                    Color.Transparent,
+                    MaterialTheme.shapes.large
+                )
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary,
+                    MaterialTheme.shapes.large
+                )
         ),
         verticalAlignment = Alignment.CenterVertically
     ) {
