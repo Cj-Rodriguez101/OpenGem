@@ -9,7 +9,7 @@ Gpt App Using OpenAI api and Gemini
 * Rename And Delete History
 * Chat
 * Open AI Whisper
-* Generate and Store Images (DALL-E-3 works but Gemini Api does not support image generation yet) - WIP
+* Generate and Store Images (DALL-E-3 works but Gemini Api does not support image generation at the time)
 * Voice Chat
 * Analyze Image Input
 
