@@ -26,18 +26,16 @@ Gpt App Using OpenAI api and Gemini
 * App startup
 
 ## To Test
-Settings -> Api Keys -> Put Api Keys Here
+Download the build in the release section
 
 ## To Build
-* Add your key to the local.properties file
-* `OPEN_AI_API_KEY=your api key` (Set Key in settings)
-* `GEMINI_AI_API_KEY=your api key`
 * Update AGP if necessary
 
 ## Credits
 * Design Inspirations From ChatGpt App and Ask AI App
 * TypeWriter Text By [Radhika canopas](https://github.com/cp-radhika-s/TypeWriter_Jetpackcompose/tree/main)
 * Observe Internet Connectivty By [Philipp Lackner](https://github.com/philipplackner/ObserveConnectivity/blob/master/app/src/main/java/com/plcoding/observeconnectivity/)
+* Thinking Lottie Animation by [EevinJennings](https://lottiefiles.com/free-animation/thinking-colors-adapted-fpxnIyL4gi?from=search)
 
 
 
